@@ -1,0 +1,380 @@
+{
+    "titulo": "El Manual del Toro 2.0 - Días 1 al 45",
+    "descripcion": "Rutinas para 45 días sin descanso en casa y gym. Cada bloque de 7 días se repite durante las semanas correspondientes.",
+    "casa": {
+        "bloque_I_semana_1_y_2": {
+            "dia_1_upper_body": [
+                "Flexiones de pecho - 15",
+                "Remo con garrafones/mochila - 15",
+                "Flexiones diamante - 10",
+                "Elevaciones laterales - 15",
+                "Fondos en silla - 15",
+                "Plancha con toque de hombros - 20 toques",
+                "Comandos - 10"
+            ],
+            "dia_2_pierna": [
+                "Sentadilla profunda - 20",
+                "Desplantes alternados - 20 pasos",
+                "Sentadilla sumo - 20",
+                "Puente de glúteo - 25",
+                "Desplante lateral - 20",
+                "Good mornings - 20",
+                "Elevaciones de pantorrilla - 40"
+            ],
+            "dia_3_abdomen": [
+                "Crunch abdominal - 20",
+                "Elevaciones de pierna - 15",
+                "Bicicleta abdominal - 30",
+                "Abdominales tipo V - 15",
+                "Plancha - 40 seg",
+                "Estrellas - 30",
+                "Plank In n out - 25"
+            ],
+            "dia_4_cardio": [
+                "Medio burpee - 15",
+                "Golpes rectos - 40 pares",
+                "Uppercuts - 40 pares",
+                "Jumping jacks - 40",
+                "Ski jumps laterales - 30",
+                "Brincar la cuerda - 60 seg",
+                "Plank con golpes - 40"
+            ],
+            "dia_5_upper_body": [
+                "Hand stand push ups - 15",
+                "Renegados - 20",
+                "Flexiones con pausa abajo - 12",
+                "Pull over con garrafón - 20",
+                "Flexiones Esfinge - 20",
+                "Elevaciones frontales - 20",
+                "Superman - 40 seg"
+            ],
+            "dia_6_pierna": [
+                "Sentadilla isométrica (wall sit) - 40 seg",
+                "Desplantes caminando - 24",
+                "Sentadilla búlgara - 20",
+                "Sentadilla con salto - 20",
+                "Patada de glúteo en el piso - 30",
+                "Abducciones de cadera de lado - 30",
+                "Elevaciones de pantorrilla - 40"
+            ],
+            "dia_7_abdomen": [
+                "Sit ups mariposas - 25",
+                "Tijeras abdominales - 30",
+                "Plancha frontal con arrastre - 40 seg",
+                "Crunch con piernas en 90° - 25",
+                "Russian twist - 40",
+                "Hollow hold - 30 seg",
+                "Mountain climbers cruzados - 40"
+            ]
+        },
+        "bloque_II_semana_3_y_4": {
+            "dia_1_upper_body": [
+                "Flexiones explosivas - 15",
+                "Plancha alta con toque de hombros - 30",
+                "Fondos en silla - 20",
+                "Hand stand push ups - 15",
+                "Superman pulls - 20",
+                "T plank - 20",
+                "Comandos - 20"
+            ],
+            "dia_2_pierna": [
+                "Step ups - 24",
+                "Sentadilla con talones elevados - 25",
+                "Desplantes con talones elevados - 20",
+                "Sentadilla búlgara - 20",
+                "Puente de glúteo - 30",
+                "Sentadilla isométrica en pared - 45 seg",
+                "Elevaciones de pantorrilla puntas abiertas - 45"
+            ],
+            "dia_3_abdomen": [
+                "Abdominales tipo V alternados - 30",
+                "Elevaciones de pierna uno y uno - 15 pares",
+                "abrazos - 20",
+                "Crunch invertido - 20",
+                "Plancha con rotación - 30",
+                "Pataditas - 40 pares",
+                "Hollow hold - 40 seg"
+            ],
+            "dia_4_cardio": [
+                "Saltitos tocando pared - 40",
+                "Jump squats con golpes - 25",
+                "Medio burpee con media vuelta - 20",
+                "Patinador - 30",
+                "Reverse plank kicks - 30",
+                "Shadow boxing libre - 60 seg",
+                "High knees cruzados - 40"
+            ],
+            "dia_5_upper_body": [
+                "Flexiones arqueras - 12",
+                "Fondos tocando pies - 20",
+                "Elevaciones laterales pulsos - 60 seg",
+                "Push ups militares - 20",
+                "Superman hold - 40 seg",
+                "Cobras - 20",
+                "Comandos lentos - 10"
+            ],
+            "dia_6_pierna": [
+                "Step ups con patada - 24",
+                "Sentadilla explosiva con silla - 25",
+                "Desplantes saltando - 20",
+                "Sentadilla búlgara - 20",
+                "Puente de glúteo una pierna - 30",
+                "Desplante pulsos - 45 seg",
+                "Elevaciones de pantorrilla individual - 30"
+            ],
+            "dia_7_abdomen": [
+                "Sit ups con golpe arriba - 20",
+                "Elevaciones de pierna alternadas - 20",
+                "Long plank - 40 seg",
+                "Tocando talones - 30",
+                "Plank Jacks - 40",
+                "Plancha lateral estática - 40 seg",
+                "Estrellas alternadas - 30"
+            ]
+        },
+        "bloque_III_semana_5_y_6": {
+            "dia_1_upper_body": [
+                "Flexiones bajas lento subes explosivo - 20",
+                "Fondos en silla pies elevados - 25",
+                "Handstand push ups - 18",
+                "Plancha jacks con toque de hombros - 40",
+                "Pulldown con toalla - 25",
+                "Plank SuperMan - 20 reps",
+                "Comandos explosivo - 15",
+                "Sorpresa: Brincar la cuerda 10 min"
+            ],
+            "dia_2_pierna": [
+                "Step ups explosivos - 30",
+                "Sentadilla de gorila - 25",
+                "Desplantes con patada caminando - 24",
+                "Sentadilla búlgara - 20",
+                "Puente de glúteo a una pierna - 30",
+                "Wall sit - 80 seg",
+                "Elevaciones de pantorrilla combinado - 50",
+                "Sorpresa: AMRAP 5 min (20 squats, 20 desplantes, 20 jumping jacks)"
+            ],
+            "dia_3_abdomen": [
+                "Bicicletas - 30",
+                "Rocky balboa - 20",
+                "Crunch cruzado - 30",
+                "Plancha in n out - 60 seg",
+                "Plank tocando pies - 40",
+                "Circulos con elevación - 20 por lado",
+                "V hold - 40 seg",
+                "Sorpresa: Reto Plancha 6 min con penalización de burpees"
+            ],
+            "dia_4_cardio": [
+                "Destruyalmas 2000 - 10",
+                "Donkey kicks - 30",
+                "Tiros de basquetbol con sentadilla - 60 seg",
+                "Bear crawl - 40 pasos",
+                "Jump lunges - 30",
+                "Crab walk - 40 pasos",
+                "Patadas de momias - 50",
+                "Sorpresa: AMRAP 5 min (10 sprawls, 20 air squats, 30 mountain climbers)"
+            ],
+            "dia_5_upper_body": [
+                "Flexiones diamante - 12",
+                "Fondos en silla con pausa abajo - 20",
+                "Worm walks - 60 seg",
+                "Plank Superman - 20",
+                "Flexiones pausa abajo - 20",
+                "Plank Renegados - 30",
+                "Patadas (botellas) - 30",
+                "Sorpresa: AMRAP 5 min (10 flexiones cerradas, 20 fondos silla, 30 seg plancha)"
+            ],
+            "dia_6_pierna": [
+                "Sentadilla Triple - 25",
+                "Desplantes atrás alternados - 24",
+                "Step ups con rodilla arriba - 30",
+                "Sentadilla con pantorrilla - 40 seg",
+                "Puente de glúteo rana - 30",
+                "Desplantes laterales - 20",
+                "Elevaciones de pantorrilla a una pierna - 40",
+                "Sorpresa: Wall sit + Pierna (7 minutos)"
+            ],
+            "dia_7_abdomen": [
+                "Gran Final. Ruge la Bestia. Entrenamiento de 38 minutos de abdomen y cardio intenso (Video YouTube: CHUY ALMADA - RUGE LA BESTIA)."
+            ]
+        }
+    },
+    "gym": {
+        "bloque_I_semana_1_y_2": {
+            "dia_1_pecho_triceps": [
+                "Press de banca con barra - 4x12",
+                "Press inclinado con mancuernas - 4x12",
+                "Aperturas en máquina o poleas - 4x15",
+                "Fondos en máquina o asistidos - 4x10-12",
+                "Extensión de tríceps en polea alta - 4x15",
+                "Press francés con barra Z o mancuernas - 4x12"
+            ],
+            "dia_2_espalda_biceps": [
+                "Jalón al pecho en polea - 4x12",
+                "Remo con barra - 4x12",
+                "Remo en máquina - 4x15",
+                "Pullover en polea - 4x15",
+                "Curl de bíceps con barra - 4x12",
+                "Curl martillo con mancuernas - 4x12"
+            ],
+            "dia_3_pierna": [
+                "Sentadilla libre o en máquina - 4x12",
+                "Prensa - 4x15",
+                "Desplantes caminando - 4x20",
+                "Curl femoral acostado - 4x15",
+                "Extensión de cuádriceps - 4x15",
+                "Aductores en máquina - 4x15",
+                "Elevaciones de pantorrilla - 4x25"
+            ],
+            "dia_4_cardio_abdomen": [
+                "Cardio 30 min",
+                "Crunch abdominal - 20",
+                "Elevaciones de pierna - 15",
+                "Bicicleta abdominal - 30",
+                "Abdominales tipo V - 15",
+                "Plancha - 40 seg",
+                "Estrellas - 30",
+                "Plank In n out - 25"
+            ],
+            "dia_5_pecho_triceps_biseries": [
+                "Biserie A: Press inclinado mancuernas (12) + Aperturas polea (15)",
+                "Biserie B: Press plano máquina (12) + Flexiones (15-20)",
+                "Biserie C: Extensión tríceps cuerda (15) + Fondos banco (12)"
+            ],
+            "dia_6_espalda_hombro_biseries": [
+                "Biserie A: Jalón al pecho polea (12) + Face pull polea (15)",
+                "Biserie B: Remo mancuerna 1 mano (12) + Elevaciones laterales mancuernas (15)",
+                "Biserie C: Remo alto polea (12) + Press hombro (12)"
+            ],
+            "dia_7_pierna": [
+                "Sentadilla sumo - 15",
+                "Prensa - 15",
+                "Desplantes hacia atrás - 20",
+                "Curl femoral sentado - 15",
+                "Extensión de cuádriceps - 15",
+                "Aductores en máquina - 15",
+                "Elevaciones de pantorrilla - 25"
+            ]
+        },
+        "bloque_II_semana_3_y_4": {
+            "dia_1_pecho_triceps": [
+                "Press inclinado con barra - 4x10",
+                "Press plano con mancuernas - 4x12",
+                "Aperturas en banco inclinado - 4x12",
+                "Cruces en polea - 4x15",
+                "Extensión de tríceps en polea - 4x12",
+                "Press cerrado con barra - 4x10",
+                "Extensión de tríceps por encima de la cabeza - 4x12"
+            ],
+            "dia_2_espalda_biceps": [
+                "Jalón al pecho en polea - 4x12",
+                "Remo con barra - 4x10",
+                "Remo en máquina - 4x12",
+                "Pullover en polea - 4x15",
+                "Curl de bíceps con barra Z - 4x12",
+                "Curl predicador - 4x12"
+            ],
+            "dia_3_pierna": [
+                "Sentadilla goblet squat - 4x10",
+                "Prensa cerrados - 4x15",
+                "Peso muerto rumano - 4x12",
+                "Desplantes búlgaros - 4x10",
+                "Curl femoral acostado - 4x15",
+                "Aductores - 4x15",
+                "Elevaciones de pantorrilla - 4x25"
+            ],
+            "dia_4_cardio_abdomen": [
+                "Cardio 30 min",
+                "Abdominales tipo V alternados - 30",
+                "Elevaciones de pierna uno y uno - 15 pares",
+                "Abrazos - 20",
+                "Crunch invertido - 20",
+                "Plancha con rotación - 30",
+                "Pataditas - 40 pares",
+                "Hollow hold - 40 seg"
+            ],
+            "dia_5_pecho_triceps_biseries": [
+                "Biserie A: Press inclinado mancuernas (12) + Aperturas inclinadas (15)",
+                "Biserie B: Press plano (12) + Fondos (10-12)",
+                "Biserie C: Extensión tríceps polea (15) + Press francés (12)",
+                "Biserie D: Extensión tríceps cuerda (12) + Patada tríceps (15)"
+            ],
+            "dia_6_espalda_biceps_biseries": [
+                "Biserie A: Jalón pecho (12) + Curl bíceps barra Z (12)",
+                "Biserie B: Remo barra (10) + Curl predicador (12)",
+                "Biserie C: Remo máquina (12) + Curl polea baja (15)",
+                "Biserie D: Pullover (15) + Curl concentrado (12)"
+            ],
+            "dia_7_pierna": [
+                "Sentadilla con barra - 12",
+                "Prensa inclinada - 15",
+                "Peso muerto rumano - 12",
+                "Desplantes caminando - 10",
+                "Curl femoral acostado - 15",
+                "Extensión de cuádriceps - 15",
+                "Elevaciones de pantorrilla - 25"
+            ]
+        },
+        "bloque_III_semana_5_y_6": {
+            "dia_1_pecho_triceps": [
+                "Press inclinado barra - 8-10 reps",
+                "Press plano barra - 12",
+                "Cruce de poleas - 15",
+                "Push ups al fallo",
+                "Press cerrado barra - 8-10",
+                "Extensión tríceps polea - 15",
+                "Fondos - 12-15"
+            ],
+            "dia_2_espalda_biceps": [
+                "Dominadas - 10-15",
+                "Remo mancuerna 1 mano - 12",
+                "Jalón al pecho - 12-15",
+                "Remo polea baja - 12",
+                "Curl barra Z - 10-12",
+                "Curl banco inclinado - 12",
+                "Curl polea baja - 15"
+            ],
+            "dia_3_pierna": [
+                "Sentadilla goblet - 10-12",
+                "Prensa inclinada - 15",
+                "Peso muerto rumano - 12",
+                "Desplantes atrás - 12",
+                "Curl femoral sentado - 15",
+                "Extensión cuádriceps - 15",
+                "Pantorrillas",
+                "Finalizador: 100 sentadillas (10x10)"
+            ],
+            "dia_4_cardio_abdomen": [
+                "Cardio 30 min",
+                "Bicicletas - 30",
+                "Rocky balboa - 20",
+                "Crunch cruzado - 30",
+                "Plancha in n out - 60 seg",
+                "Plank tocando pies - 40",
+                "Circulos con elevación - 20",
+                "V hold - 40 seg"
+            ],
+            "dia_5_pecho_triceps_biseries": [
+                "Biserie A: Press plano barra (10) + Aperturas planas (15)",
+                "Biserie B: Press inclinado máquina (12) + Fondos (10-12)",
+                "Biserie C: Extensión tríceps (15) + Press francés (12)",
+                "Biserie D: Extensión tríceps cuerda (12) + Patada tríceps (15)"
+            ],
+            "dia_6_espalda_biceps_biseries": [
+                "Biserie A: Jalón pecho (12) + Curl barra Z (12)",
+                "Biserie B: Remo barra (10) + Curl predicador (12)",
+                "Biserie C: Remo máquina (12) + Curl polea baja (15)",
+                "Biserie D: Pullover (15) + Curl concentrado (12)"
+            ],
+            "dia_7_pierna": [
+                "Sentadilla sumo - 10-12",
+                "Prensa abiertos - 15",
+                "Búlgaros - 12",
+                "Desplantes - 12",
+                "Curl femoral - 15",
+                "Extensión cuádriceps 1 pierna - 15",
+                "Pantorrillas - 25",
+                "Finalizador: Escalera de sentadillas + Wall sit"
+            ]
+        }
+    }
+}
