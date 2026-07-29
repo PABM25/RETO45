@@ -1,19 +1,21 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
+// Import the functions you need from the SDKs you need
+import { getAnalytics } from "firebase/analytics";
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-// Environment variables or fallback mock strings
-// You can supply these via a .env file locally (e.g. EXPO_PUBLIC_FIREBASE_API_KEY)
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || "mock-api-key-for-development",
-  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || "mock-domain.firebaseapp.com",
-  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || "mock-project-id",
-  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || "mock-bucket.appspot.com",
-  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || "123456789",
-  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || "1:123456789:web:abcdef",
+  apiKey: "AIzaSyBkA8tGHe3hE5hSjezwuGSi_eOUjby7cks",
+  authDomain: "reto45-53dd8.firebaseapp.com",
+  projectId: "reto45-53dd8",
+  storageBucket: "reto45-53dd8.firebasestorage.app",
+  messagingSenderId: "108156731958",
+  appId: "1:108156731958:web:50fd3bcf3f93ab4e9d0e97",
+  measurementId: "G-0RTFC0EP9R",
 };
 
-// Initialize Firebase only if it hasn't been initialized already (hot-reloading safety)
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-
-export { app, auth };
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
