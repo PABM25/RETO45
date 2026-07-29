@@ -15,6 +15,7 @@ export default function OnboardingScreen() {
   const [gender, setGender] = useState<'Hombre' | 'Mujer'>('Hombre');
   const [environment, setEnvironment] = useState<'CASA' | 'GYM'>('CASA');
   const [level, setLevel] = useState<'Principiante' | 'Intermedio' | 'Avanzado'>('Principiante');
+  const [goal, setGoal] = useState<'Pérdida de Peso' | 'Ganancia Muscular'>('Pérdida de Peso');
 
   const parsedAge = parseInt(age, 10);
   const parsedWeight = parseFloat(weight);
@@ -40,11 +41,16 @@ export default function OnboardingScreen() {
       else if (level === 'Intermedio') multiplier = 1.55;
       else if (level === 'Avanzado') multiplier = 1.725;
 
-      // Target for deficit/challenge (e.g. 80% of maintenance)
-      return (bmr * multiplier) * 0.8;
+      const maintenance = bmr * multiplier;
+
+      if (goal === 'Pérdida de Peso') {
+        return maintenance * 0.8; // 20% deficit
+      } else {
+        return maintenance * 1.2; // 20% surplus
+      }
     }
     return 0;
-  }, [parsedWeight, parsedHeight, parsedAge, gender, level]);
+  }, [parsedWeight, parsedHeight, parsedAge, gender, level, goal]);
 
   const isFormValid = parsedAge > 0 && parsedWeight > 0 && parsedHeight > 0;
 
@@ -57,6 +63,7 @@ export default function OnboardingScreen() {
         gender,
         environment,
         level,
+        goal,
         imc,
         targetCalories,
       };
@@ -148,6 +155,21 @@ export default function OnboardingScreen() {
               <Picker.Item label="Principiante" value="Principiante" color="#fff" />
               <Picker.Item label="Intermedio" value="Intermedio" color="#fff" />
               <Picker.Item label="Avanzado" value="Avanzado" color="#fff" />
+            </Picker>
+          </View>
+        </View>
+
+        <View style={styles.pickerContainer}>
+          <Text style={styles.label}>Objetivo</Text>
+          <View style={styles.pickerWrapper}>
+            <Picker
+              selectedValue={goal}
+              onValueChange={(itemValue) => setGoal(itemValue as 'Pérdida de Peso' | 'Ganancia Muscular')}
+              style={styles.picker}
+              dropdownIconColor="#E63946"
+            >
+              <Picker.Item label="Pérdida de Peso" value="Pérdida de Peso" color="#fff" />
+              <Picker.Item label="Ganancia Muscular" value="Ganancia Muscular" color="#fff" />
             </Picker>
           </View>
         </View>

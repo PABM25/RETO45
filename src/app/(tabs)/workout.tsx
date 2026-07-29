@@ -12,19 +12,23 @@ export default function WorkoutScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    if (timerActive && timeLeft > 0) {
+    if (timerActive) {
       timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            setTimerActive(false);
+            if (timerRef.current) clearInterval(timerRef.current);
+            return 60;
+          }
+          return prev - 1;
+        });
       }, 1000);
-    } else if (timeLeft === 0) {
-      setTimerActive(false);
-      setTimeLeft(60);
-      if (timerRef.current) clearInterval(timerRef.current);
     }
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [timerActive, timeLeft]);
+  }, [timerActive]);
 
   const toggleTimer = () => {
     if (timerActive) {

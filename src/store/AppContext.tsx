@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { UserProfile, Routine, DailyProgress } from '../types';
+import { UserProfile, Routine, DailyProgress, PhotoProgress } from '../types';
 
 interface AppContextType {
   userProfile: UserProfile | null;
@@ -8,6 +8,8 @@ interface AppContextType {
   dailyProgress: DailyProgress[];
   markDayCompleted: (day: number) => void;
   currentDay: number;
+  photos: PhotoProgress[];
+  addPhoto: (photo: PhotoProgress) => void;
 }
 
 const mockRoutines: Routine[] = [
@@ -29,6 +31,11 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
   const [routines] = useState<Routine[]>(mockRoutines);
   const [dailyProgress, setDailyProgress] = useState<DailyProgress[]>(initialProgress);
   const [currentDay, setCurrentDay] = useState(1);
+  const [photos, setPhotos] = useState<PhotoProgress[]>([]);
+
+  const addPhoto = (photo: PhotoProgress) => {
+    setPhotos((prev) => [...prev, photo]);
+  };
 
   const markDayCompleted = (day: number) => {
     setDailyProgress((prev) =>
@@ -50,6 +57,8 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
         dailyProgress,
         markDayCompleted,
         currentDay,
+        photos,
+        addPhoto,
       }}
     >
       {children}

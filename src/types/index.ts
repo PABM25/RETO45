@@ -5,8 +5,16 @@ export interface UserProfile {
   gender: 'Hombre' | 'Mujer';
   environment: 'CASA' | 'GYM';
   level: 'Principiante' | 'Intermedio' | 'Avanzado';
+  goal: 'Pérdida de Peso' | 'Ganancia Muscular';
   imc: number;
   targetCalories: number;
+}
+
+export interface PhotoProgress {
+  id: string;
+  uri: string;
+  date: string;
+  type: 'Frente' | 'Lado' | 'Espalda';
 }
 
 export interface Routine {
