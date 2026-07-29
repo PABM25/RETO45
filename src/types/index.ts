@@ -17,14 +17,19 @@ export interface PhotoProgress {
   type: 'Frente' | 'Lado' | 'Espalda';
 }
 
-export interface Routine {
+export interface Exercise {
   id: string;
-  day: number;
   title: string;
-  reps: number | string;
-  sets: number;
+  reps: string;
   description: string;
-  videoUrl: string;
+  videoUrl?: string;
+}
+
+export interface DailyRoutine {
+  dayNumber: number;
+  environment: 'CASA' | 'GYM';
+  title: string;
+  exercises: Exercise[];
 }
 
 export interface DailyProgress {

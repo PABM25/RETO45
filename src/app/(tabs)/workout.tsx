@@ -2,10 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Linking } from 'react-native';
 import { Play, Square, Video } from 'lucide-react-native';
 import { useAppContext } from '../../store/AppContext';
-import { Routine } from '../../types';
+import { Exercise } from '../../types';
 
 export default function WorkoutScreen() {
-  const { routines, currentDay } = useAppContext();
+  const { routines, currentDay, userProfile } = useAppContext();
 
   const [timerActive, setTimerActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
@@ -40,15 +40,23 @@ export default function WorkoutScreen() {
     }
   };
 
-  const renderRoutineCard = ({ item }: { item: Routine }) => (
+  const todaysRoutine = routines.find(
+    r => r.dayNumber === currentDay && r.environment === (userProfile?.environment || 'CASA')
+  );
+
+  let recommendedSets = 3;
+  if (userProfile?.level === 'Intermedio') recommendedSets = 4;
+  else if (userProfile?.level === 'Avanzado') recommendedSets = 5;
+
+  const renderExerciseCard = ({ item }: { item: Exercise }) => (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>{item.title}</Text>
       <Text style={styles.cardDescription}>{item.description}</Text>
 
       <View style={styles.cardDetails}>
         <View style={styles.detailBox}>
-          <Text style={styles.detailLabel}>Series</Text>
-          <Text style={styles.detailValue}>{item.sets}</Text>
+          <Text style={styles.detailLabel}>Series (Recomendadas)</Text>
+          <Text style={styles.detailValue}>{recommendedSets}</Text>
         </View>
         <View style={styles.detailBox}>
           <Text style={styles.detailLabel}>Reps</Text>
@@ -56,26 +64,36 @@ export default function WorkoutScreen() {
         </View>
       </View>
 
-      <TouchableOpacity
-        style={styles.videoButton}
-        onPress={() => Linking.openURL(item.videoUrl)}
-      >
-        <Video size={16} color="#ffffff" />
-        <Text style={styles.videoButtonText}>VER VIDEO</Text>
-      </TouchableOpacity>
+      {item.videoUrl && (
+        <TouchableOpacity
+          style={styles.videoButton}
+          onPress={() => Linking.openURL(item.videoUrl!)}
+        >
+          <Video size={16} color="#ffffff" />
+          <Text style={styles.videoButtonText}>VER VIDEO</Text>
+        </TouchableOpacity>
+      )}
     </View>
   );
 
-  const todaysRoutine = routines.filter(r => r.day === currentDay);
+  if (!todaysRoutine) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Rutina no encontrada.</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.headerTitle}>RUTINA DÍA {currentDay}</Text>
+      <Text style={styles.headerTitle}>{todaysRoutine.title}</Text>
 
       <FlatList
-        data={todaysRoutine}
+        data={todaysRoutine.exercises}
         keyExtractor={(item) => item.id}
-        renderItem={renderRoutineCard}
+        renderItem={renderExerciseCard}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       />
@@ -106,13 +124,23 @@ const styles = StyleSheet.create({
     backgroundColor: '#121212',
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: '900',
     color: '#ffffff',
     textAlign: 'center',
     marginVertical: 20,
+    paddingHorizontal: 15,
     textTransform: 'uppercase',
-    letterSpacing: 2,
+    letterSpacing: 1,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#aaaaaa',
+    fontSize: 18,
   },
   listContent: {
     paddingHorizontal: 20,
