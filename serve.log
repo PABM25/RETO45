@@ -1,0 +1,9 @@
+ INFO  Accepting connections at http://localhost:3000
+ HTTP  7/29/2026 10:02:55 PM ::1 GET /
+ HTTP  7/29/2026 10:02:55 PM ::1 Returned 200 in 22 ms
+ HTTP  7/29/2026 10:02:55 PM ::1 GET /_expo/static/js/web/entry-a1749116b55979c09a868dbecdd49c78.js
+ HTTP  7/29/2026 10:02:55 PM ::1 Returned 200 in 16 ms
+ HTTP  7/29/2026 10:02:55 PM ::1 GET /
+ HTTP  7/29/2026 10:02:55 PM ::1 Returned 304 in 2 ms
+ HTTP  7/29/2026 10:02:55 PM ::1 GET /_expo/static/js/web/entry-a1749116b55979c09a868dbecdd49c78.js
+ HTTP  7/29/2026 10:02:55 PM ::1 Returned 304 in 5 ms

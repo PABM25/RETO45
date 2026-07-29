@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { CheckSquare, Square, ChevronRight } from 'lucide-react-native';
+import { CheckSquare, Square, ChevronRight, LogOut } from 'lucide-react-native';
 import { useAppContext } from '../../store/AppContext';
+import { signOut } from 'firebase/auth';
+import { auth } from '../../config/firebase';
 
 const CHECKLIST_ITEMS = [
   "Cero Alcohol",
@@ -14,7 +16,7 @@ const CHECKLIST_ITEMS = [
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { currentDay, markDayCompleted, dailyProgress } = useAppContext();
+  const { currentDay, markDayCompleted, dailyProgress, setMockAuth } = useAppContext();
 
   const currentDayData = dailyProgress.find(d => d.day === currentDay);
   const isAlreadyCompleted = currentDayData?.completed ?? false;
@@ -37,6 +39,17 @@ export default function DashboardScreen() {
       markDayCompleted(currentDay);
       // Reset checklist for the next day
       setChecklist(new Array(5).fill(false));
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      setMockAuth(false);
+      await signOut(auth);
+      // The auth guard should catch this and redirect, or we can manually push:
+      router.replace('/login');
+    } catch (error: any) {
+      Alert.alert('Error', error.message);
     }
   };
 
@@ -91,6 +104,14 @@ export default function DashboardScreen() {
           <Text style={styles.completeButtonText}>
             {isAlreadyCompleted ? 'DÍA COMPLETADO' : 'TACHAR DÍA'}
           </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+        >
+          <LogOut size={20} color="#aaaaaa" />
+          <Text style={styles.logoutButtonText}>CERRAR SESIÓN</Text>
         </TouchableOpacity>
 
       </ScrollView>
@@ -188,5 +209,18 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: '900',
     letterSpacing: 2,
+  },
+  logoutButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 15,
+    marginTop: 20,
+    gap: 10,
+  },
+  logoutButtonText: {
+    color: '#aaaaaa',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
