@@ -19,9 +19,12 @@ export interface PhotoProgress {
 
 export interface Routine {
   id: string;
+  day: number;
   title: string;
   reps: number | string;
   sets: number;
+  description: string;
+  videoUrl: string;
 }
 
 export interface DailyProgress {

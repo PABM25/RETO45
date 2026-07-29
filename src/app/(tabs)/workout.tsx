@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView } from 'react-native';
-import { Play, Square } from 'lucide-react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Linking } from 'react-native';
+import { Play, Square, Video } from 'lucide-react-native';
 import { useAppContext } from '../../store/AppContext';
 import { Routine } from '../../types';
 
 export default function WorkoutScreen() {
-  const { routines } = useAppContext();
+  const { routines, currentDay } = useAppContext();
 
   const [timerActive, setTimerActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(60);
@@ -43,6 +43,8 @@ export default function WorkoutScreen() {
   const renderRoutineCard = ({ item }: { item: Routine }) => (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>{item.title}</Text>
+      <Text style={styles.cardDescription}>{item.description}</Text>
+
       <View style={styles.cardDetails}>
         <View style={styles.detailBox}>
           <Text style={styles.detailLabel}>Series</Text>
@@ -53,15 +55,25 @@ export default function WorkoutScreen() {
           <Text style={styles.detailValue}>{item.reps}</Text>
         </View>
       </View>
+
+      <TouchableOpacity
+        style={styles.videoButton}
+        onPress={() => Linking.openURL(item.videoUrl)}
+      >
+        <Video size={16} color="#ffffff" />
+        <Text style={styles.videoButtonText}>VER VIDEO</Text>
+      </TouchableOpacity>
     </View>
   );
 
+  const todaysRoutine = routines.filter(r => r.day === currentDay);
+
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.headerTitle}>RUTINA DEL DÍA</Text>
+      <Text style={styles.headerTitle}>RUTINA DÍA {currentDay}</Text>
 
       <FlatList
-        data={routines}
+        data={todaysRoutine}
         keyExtractor={(item) => item.id}
         renderItem={renderRoutineCard}
         contentContainerStyle={styles.listContent}
@@ -118,8 +130,14 @@ const styles = StyleSheet.create({
     color: '#E63946',
     fontSize: 20,
     fontWeight: '900',
-    marginBottom: 15,
+    marginBottom: 10,
     textTransform: 'uppercase',
+  },
+  cardDescription: {
+    color: '#aaaaaa',
+    fontSize: 14,
+    marginBottom: 15,
+    lineHeight: 20,
   },
   cardDetails: {
     flexDirection: 'row',
@@ -146,6 +164,21 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 18,
     fontWeight: '900',
+  },
+  videoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E63946',
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 15,
+    gap: 8,
+  },
+  videoButtonText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
   floatingTimer: {
     position: 'absolute',
