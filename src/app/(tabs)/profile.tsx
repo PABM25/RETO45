@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Modal,
-  Dimensions
+  useWindowDimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppContext } from '../../store/AppContext';
@@ -19,7 +19,6 @@ import { UserProfile } from '../../types';
 import { Activity, Flame, Scale, ActivitySquare, Award, X } from 'lucide-react-native';
 import { LineChart } from 'react-native-chart-kit';
 
-const screenWidth = Dimensions.get('window').width;
 
 const getImcStatus = (imc: number) => {
   if (imc < 18.5) return 'Bajo peso';
@@ -43,6 +42,8 @@ export default function ProfileScreen() {
   const [isUpdatingWeight, setIsUpdatingWeight] = useState(false);
   const [isWeightModalVisible, setIsWeightModalVisible] = useState(false);
   const [selectedTab, setSelectedTab] = useState('Semana');
+
+  const { width } = useWindowDimensions();
 
   const completedDaysCount = dailyProgress.filter((day) => day.completed).length;
   const progressPercentage = (completedDaysCount / 45) * 100;
@@ -119,19 +120,20 @@ export default function ProfileScreen() {
   const tabs = ['Día', 'Semana', 'Mes', 'Total'];
 
   // Mock data for chart
+  const baseWeight = userProfile?.weight;
   const chartData = {
     labels: ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'],
     datasets: [
       {
-        data: [
-          (userProfile?.weight || 70) + 1.2,
-          (userProfile?.weight || 70) + 1.0,
-          (userProfile?.weight || 70) + 0.8,
-          (userProfile?.weight || 70) + 0.6,
-          (userProfile?.weight || 70) + 0.4,
-          (userProfile?.weight || 70) + 0.2,
-          userProfile?.weight || 70
-        ]
+        data: baseWeight !== undefined && baseWeight > 0 ? [
+          baseWeight + 1.2,
+          baseWeight + 1.0,
+          baseWeight + 0.8,
+          baseWeight + 0.6,
+          baseWeight + 0.4,
+          baseWeight + 0.2,
+          baseWeight
+        ] : [0, 0, 0, 0, 0, 0, 0]
       }
     ]
   };
@@ -254,36 +256,43 @@ export default function ProfileScreen() {
                   <Text style={styles.chartSubtitle}>Evolución de Peso</Text>
                 </View>
 
-                <LineChart
-                  data={chartData}
-                  width={screenWidth - 80}
-                  height={220}
-                  withDots={true}
-                  withInnerLines={false}
-                  withOuterLines={false}
-                  chartConfig={{
-                    backgroundColor: '#1E1E1E',
-                    backgroundGradientFrom: '#1E1E1E',
-                    backgroundGradientTo: '#1E1E1E',
-                    decimalPlaces: 1,
-                    color: (opacity = 1) => `rgba(230, 57, 70, ${opacity})`,
-                    labelColor: (opacity = 1) => `rgba(170, 170, 170, ${opacity})`,
-                    style: {
-                      borderRadius: 16
-                    },
-                    propsForDots: {
-                      r: "4",
-                      strokeWidth: "2",
-                      stroke: "#E63946"
-                    }
-                  }}
-                  bezier
-                  style={{
-                    marginVertical: 8,
-                    borderRadius: 16,
-                    paddingRight: 30, // fix cutoff label
-                  }}
-                />
+                {chartData?.datasets?.[0]?.data?.length > 0 ? (
+                  <LineChart
+                    data={chartData}
+                    width={Math.max(width - 80, 200)}
+                    height={220}
+                    withDots={true}
+                    withInnerLines={false}
+                    withOuterLines={false}
+                    chartConfig={{
+                      backgroundColor: '#1E1E1E',
+                      backgroundGradientFrom: '#1E1E1E',
+                      backgroundGradientTo: '#1E1E1E',
+                      decimalPlaces: 1,
+                      color: (opacity = 1) => `rgba(230, 57, 70, ${opacity})`,
+                      labelColor: (opacity = 1) => `rgba(170, 170, 170, ${opacity})`,
+                      style: {
+                        borderRadius: 16
+                      },
+                      propsForDots: {
+                        r: "4",
+                        strokeWidth: "2",
+                        stroke: "#E63946"
+                      }
+                    }}
+                    bezier
+                    style={{
+                      marginVertical: 8,
+                      borderRadius: 16,
+                      paddingRight: 30, // fix cutoff label
+                    }}
+                  />
+                ) : (
+                  <View style={{ padding: 40, alignItems: 'center' }}>
+                    <ActivityIndicator size="small" color="#E63946" />
+                    <Text style={{ color: '#aaa', marginTop: 12, fontSize: 16 }}>Cargando estadísticas...</Text>
+                  </View>
+                )}
               </View>
             </View>
           </>
