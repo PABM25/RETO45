@@ -1,0 +1,249 @@
+<<<<<<< SEARCH
+import { Play, Square, Video, Timer, Bot, X } from 'lucide-react-native';
+import { useAppContext } from '../../store/AppContext';
+import { Exercise } from '../../types';
+import { getExerciseExplanation } from '../../services/aiService';
+
+export default function WorkoutScreen() {
+=======
+import { Play, Square, Video, Timer, Bot, X, Eye } from 'lucide-react-native';
+import { Image } from 'expo-image';
+import { useAppContext } from '../../store/AppContext';
+import { Exercise } from '../../types';
+import { getExerciseExplanation } from '../../services/aiService';
+import { getExerciseGifName, translateMuscle } from '../../utils/exerciseDictionary';
+import exercisesData from '../../data/exercises.json';
+
+export default function WorkoutScreen() {
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+  const [modalVisible, setModalVisible] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState('');
+  const [selectedExerciseTitle, setSelectedExerciseTitle] = useState('');
+
+  const handleAiPress = async (exercise: Exercise) => {
+=======
+  const [modalVisible, setModalVisible] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState('');
+  const [selectedExerciseTitle, setSelectedExerciseTitle] = useState('');
+
+  const [exampleModalVisible, setExampleModalVisible] = useState(false);
+  const [selectedExample, setSelectedExample] = useState<any>(null);
+
+  const handleExamplePress = (exercise: Exercise) => {
+    setSelectedExerciseTitle(exercise.title);
+
+    const englishName = getExerciseGifName(exercise.title);
+    const found = exercisesData.find(e => e.name.toLowerCase().includes(englishName.toLowerCase()));
+
+    if (found) {
+      setSelectedExample(found);
+    } else {
+      setSelectedExample(null);
+    }
+    setExampleModalVisible(true);
+  };
+
+  const handleAiPress = async (exercise: Exercise) => {
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+        {item.videoUrl && (
+          <TouchableOpacity
+            style={[styles.actionButton, styles.videoButton]}
+            onPress={() => Linking.openURL(item.videoUrl!)}
+          >
+            <Video size={16} color="#ffffff" />
+            <Text style={styles.actionButtonText}>VER VIDEO</Text>
+          </TouchableOpacity>
+        )}
+
+        <TouchableOpacity
+          style={[styles.actionButton, styles.aiButton]}
+          onPress={() => handleAiPress(item)}
+        >
+          <Bot size={16} color="#E63946" />
+          <Text style={styles.aiButtonText}>EXPLICACIÓN IA</Text>
+        </TouchableOpacity>
+=======
+        <View style={styles.rowActions}>
+          {item.videoUrl && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.videoButton, { flex: 1, marginRight: 5 }]}
+              onPress={() => Linking.openURL(item.videoUrl!)}
+            >
+              <Video size={16} color="#ffffff" />
+              <Text style={styles.actionButtonText}>VIDEO</Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            style={[styles.actionButton, styles.exampleButton, { flex: 1, marginLeft: item.videoUrl ? 5 : 0 }]}
+            onPress={() => handleExamplePress(item)}
+          >
+            <Eye size={16} color="#ffffff" />
+            <Text style={styles.actionButtonText}>EJEMPLO</Text>
+          </TouchableOpacity>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.actionButton, styles.aiButton]}
+          onPress={() => handleAiPress(item)}
+        >
+          <Bot size={16} color="#E63946" />
+          <Text style={styles.aiButtonText}>EXPLICACIÓN IA</Text>
+        </TouchableOpacity>
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+=======
+      {/* Example Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={exampleModalVisible}
+        onRequestClose={() => setExampleModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalTitleContainer}>
+                <Eye size={24} color="#E63946" />
+                <Text style={styles.modalTitle}>Ejemplo Visual</Text>
+              </View>
+              <TouchableOpacity onPress={() => setExampleModalVisible(false)}>
+                <X size={24} color="#aaaaaa" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalExerciseTitle}>{selectedExerciseTitle}</Text>
+
+            {selectedExample ? (
+              <View style={styles.exampleContainer}>
+                {selectedExample.target && (
+                  <Text style={styles.targetMuscleText}>
+                    Músculo objetivo: <Text style={styles.targetMuscleHighlight}>{translateMuscle(selectedExample.target)}</Text>
+                  </Text>
+                )}
+
+                <View style={styles.imageWrapper}>
+                  <Image
+                    source={{ uri: `https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/master/${selectedExample.gifUrl || selectedExample.gif_url}` }}
+                    style={styles.gifImage}
+                    contentFit="contain"
+                    onLoadStart={() => {}}
+                    onLoadEnd={() => {}}
+                  />
+                  {/* Activity Indicator rendered over the image */}
+                  <View style={styles.loadingOverlay}>
+                     <ActivityIndicator size="large" color="#E63946" />
+                  </View>
+                </View>
+              </View>
+            ) : (
+              <View style={styles.noDataContainer}>
+                <Text style={styles.noDataText}>Animación no disponible por el momento.</Text>
+              </View>
+            )}
+
+            <TouchableOpacity style={styles.closeModalButton} onPress={() => setExampleModalVisible(false)}>
+              <Text style={styles.closeModalButtonText}>CERRAR</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* AI Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+>>>>>>> REPLACE
+<<<<<<< SEARCH
+  videoButton: {
+    backgroundColor: '#E63946',
+  },
+  actionButtonText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  aiButton: {
+    backgroundColor: '#1e1e1e',
+    borderWidth: 1,
+    borderColor: '#E63946',
+  },
+=======
+  rowActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  videoButton: {
+    backgroundColor: '#E63946',
+  },
+  exampleButton: {
+    backgroundColor: '#333333',
+  },
+  actionButtonText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  aiButton: {
+    backgroundColor: '#1e1e1e',
+    borderWidth: 1,
+    borderColor: '#E63946',
+  },
+  exampleContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  targetMuscleText: {
+    color: '#aaaaaa',
+    fontSize: 16,
+    marginBottom: 15,
+  },
+  targetMuscleHighlight: {
+    color: '#E63946',
+    fontWeight: 'bold',
+  },
+  imageWrapper: {
+    width: '100%',
+    height: 250,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  gifImage: {
+    width: '100%',
+    height: '100%',
+    zIndex: 1,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 0, // Image will sit on top once loaded
+  },
+  noDataContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  noDataText: {
+    color: '#aaaaaa',
+    fontSize: 16,
+    textAlign: 'center',
+  },
+>>>>>>> REPLACE
