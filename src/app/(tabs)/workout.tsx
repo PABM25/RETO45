@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Linking, Vibration, Modal, ActivityIndicator, ScrollView } from 'react-native';
-import { Play, Square, Video, Timer, Bot, X } from 'lucide-react-native';
+import { Play, Square, Video, Timer, Bot, X, Eye } from 'lucide-react-native';
+import { Image } from 'expo-image';
 import { useAppContext } from '../../store/AppContext';
 import { Exercise } from '../../types';
 import { getExerciseExplanation } from '../../services/aiService';
+import { getExerciseGifName, translateMuscle } from '../../utils/exerciseDictionary';
+import exercisesData from '../../data/exercises.json';
 
 export default function WorkoutScreen() {
   const { routines, currentDay, userProfile } = useAppContext();
@@ -55,6 +58,25 @@ export default function WorkoutScreen() {
   const [aiExplanation, setAiExplanation] = useState('');
   const [selectedExerciseTitle, setSelectedExerciseTitle] = useState('');
 
+  const [exampleModalVisible, setExampleModalVisible] = useState(false);
+  const [selectedExample, setSelectedExample] = useState<any>(null);
+  const [gifLoading, setGifLoading] = useState(true);
+
+  const handleExamplePress = (exercise: Exercise) => {
+    setSelectedExerciseTitle(exercise.title);
+
+    const englishName = getExerciseGifName(exercise.title);
+    const found = exercisesData.find((e: any) => e.name.toLowerCase().includes(englishName.toLowerCase()));
+
+    if (found) {
+      setSelectedExample(found);
+    } else {
+      setSelectedExample(null);
+    }
+    setGifLoading(true);
+    setExampleModalVisible(true);
+  };
+
   const handleAiPress = async (exercise: Exercise) => {
     setSelectedExerciseTitle(exercise.title);
     setAiExplanation('');
@@ -96,15 +118,25 @@ export default function WorkoutScreen() {
       </View>
 
       <View style={styles.cardActions}>
-        {item.videoUrl && (
+        <View style={styles.rowActions}>
+          {item.videoUrl && (
+            <TouchableOpacity
+              style={[styles.actionButton, styles.videoButton, { flex: 1, marginRight: 5 }]}
+              onPress={() => Linking.openURL(item.videoUrl!)}
+            >
+              <Video size={16} color="#ffffff" />
+              <Text style={styles.actionButtonText}>VIDEO</Text>
+            </TouchableOpacity>
+          )}
+
           <TouchableOpacity
-            style={[styles.actionButton, styles.videoButton]}
-            onPress={() => Linking.openURL(item.videoUrl!)}
+            style={[styles.actionButton, styles.exampleButton, { flex: 1, marginLeft: item.videoUrl ? 5 : 0 }]}
+            onPress={() => handleExamplePress(item)}
           >
-            <Video size={16} color="#ffffff" />
-            <Text style={styles.actionButtonText}>VER VIDEO</Text>
+            <Eye size={16} color="#ffffff" />
+            <Text style={styles.actionButtonText}>EJEMPLO</Text>
           </TouchableOpacity>
-        )}
+        </View>
 
         <TouchableOpacity
           style={[styles.actionButton, styles.aiButton]}
@@ -165,6 +197,64 @@ export default function WorkoutScreen() {
         )}
       </View>
 
+      {/* Example Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={exampleModalVisible}
+        onRequestClose={() => setExampleModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalTitleContainer}>
+                <Eye size={24} color="#E63946" />
+                <Text style={styles.modalTitle}>Ejemplo Visual</Text>
+              </View>
+              <TouchableOpacity onPress={() => setExampleModalVisible(false)}>
+                <X size={24} color="#aaaaaa" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalExerciseTitle}>{selectedExerciseTitle}</Text>
+
+            {selectedExample ? (
+              <View style={styles.exampleContainer}>
+                {selectedExample.target && (
+                  <Text style={styles.targetMuscleText}>
+                    Músculo objetivo: <Text style={styles.targetMuscleHighlight}>{translateMuscle(selectedExample.target)}</Text>
+                  </Text>
+                )}
+
+                <View style={styles.imageWrapper}>
+                  {/* Activity Indicator controlled by image loading state */}
+                  {gifLoading && (
+                    <View style={styles.loadingOverlay}>
+                      <ActivityIndicator size="large" color="#E63946" />
+                    </View>
+                  )}
+                  <Image
+                    source={{ uri: `https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/master/${selectedExample.gifUrl || selectedExample.gif_url}` }}
+                    style={styles.gifImage}
+                    contentFit="contain"
+                    onLoadEnd={() => setGifLoading(false)}
+                  />
+                </View>
+              </View>
+            ) : (
+              <View style={styles.noDataContainer}>
+                <Text style={styles.noDataText}>Animación no disponible por el momento.</Text>
+              </View>
+            )}
+
+            <TouchableOpacity style={styles.closeModalButton} onPress={() => setExampleModalVisible(false)}>
+              <Text style={styles.closeModalButtonText}>CERRAR</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* AI Modal */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -293,8 +383,16 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     gap: 8,
   },
+  rowActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
   videoButton: {
     backgroundColor: '#E63946',
+  },
+  exampleButton: {
+    backgroundColor: '#333333',
   },
   actionButtonText: {
     color: '#ffffff',
@@ -310,6 +408,56 @@ const styles = StyleSheet.create({
     color: '#E63946',
     fontWeight: 'bold',
     fontSize: 14,
+  },
+  exampleContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  targetMuscleText: {
+    color: '#aaaaaa',
+    fontSize: 16,
+    marginBottom: 15,
+  },
+  targetMuscleHighlight: {
+    color: '#E63946',
+    fontWeight: 'bold',
+  },
+  imageWrapper: {
+    width: '100%',
+    height: 250,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  gifImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    zIndex: 1,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 0, // Image will sit on top once loaded
+  },
+  noDataContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  noDataText: {
+    color: '#aaaaaa',
+    fontSize: 16,
+    textAlign: 'center',
   },
   timerContainer: {
     backgroundColor: '#1e1e1e',
