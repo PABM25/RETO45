@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { UserProfile, DailyRoutine, DailyProgress, PhotoProgress } from '../types';
 import { allRoutines } from '../data/allRoutines';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '../config/firebase';
 import { doc, setDoc, getDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';

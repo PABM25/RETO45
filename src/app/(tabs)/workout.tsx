@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Vibration, ActivityIndicator } from 'react-native';
-import { ArrowLeft, Timer, StopCircle, Play, ChevronRight, Check } from 'lucide-react-native';
+import { ArrowLeft, StopCircle, Play, ChevronRight, Check } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useAppContext } from '../../store/AppContext';
-import { getExerciseGifName, translateMuscle } from '../../utils/exerciseDictionary';
+import { getExerciseGifName } from '../../utils/exerciseDictionary';
 import exercisesData from '../../data/exercises.json';
 import { Exercise } from '../../types';
 
@@ -12,9 +12,29 @@ export default function WorkoutScreen() {
   const router = useRouter();
   const { routines, currentDay, userProfile, markDayCompleted } = useAppContext();
 
+  const todaysRoutine = routines.find(
+    r => r.dayNumber === currentDay && r.environment === (userProfile?.environment || 'CASA')
+  );
+
+  const exercises = todaysRoutine?.exercises || [];
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+  const currentExercise = exercises[currentExerciseIndex] as Exercise | undefined;
+  const nextExercise = exercises[currentExerciseIndex + 1] as Exercise | undefined;
+  const isLastExercise = currentExerciseIndex === exercises.length - 1;
+
+  // Derive duration in seconds from 'reps' field or default to 60 if it's not time-based
+  const parseDuration = (repsString: string | undefined) => {
+    if (!repsString) return 60;
+    if (repsString.toLowerCase().includes('seg') || repsString.toLowerCase().includes('sec')) {
+      const match = repsString.match(/\d+/);
+      if (match) return parseInt(match[0], 10);
+    }
+    return 60; // default active time if reps-based
+  };
+
   const [timerActive, setTimerActive] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(0);
+  // Initialize with the parsed duration of the first exercise
+  const [timeLeft, setTimeLeft] = useState(parseDuration(currentExercise?.reps));
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [gifLoading, setGifLoading] = useState(true);
@@ -26,32 +46,21 @@ export default function WorkoutScreen() {
     };
   }, []);
 
-  const todaysRoutine = routines.find(
-    r => r.dayNumber === currentDay && r.environment === (userProfile?.environment || 'CASA')
-  );
-
-  const exercises = todaysRoutine?.exercises || [];
-  const currentExercise = exercises[currentExerciseIndex] as Exercise | undefined;
-  const nextExercise = exercises[currentExerciseIndex + 1] as Exercise | undefined;
-  const isLastExercise = currentExerciseIndex === exercises.length - 1;
-
-  // Derive duration in seconds from 'reps' field or default to 60 if it's not time-based
-  const parseDuration = (repsString: string) => {
-    if (repsString.toLowerCase().includes('seg') || repsString.toLowerCase().includes('sec')) {
-      const match = repsString.match(/\d+/);
-      if (match) return parseInt(match[0], 10);
-    }
-    return 60; // default active time if reps-based
-  };
-
-  useEffect(() => {
-    if (currentExercise) {
+  const handleNext = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (!isLastExercise) {
+      const nextIndex = currentExerciseIndex + 1;
+      setCurrentExerciseIndex(nextIndex);
+      const nextEx = exercises[nextIndex] as Exercise | undefined;
       setTimerActive(false);
-      setTimeLeft(parseDuration(currentExercise.reps));
+      setTimeLeft(parseDuration(nextEx?.reps));
       setGifLoading(true);
-      if (timerRef.current) clearInterval(timerRef.current);
+    } else {
+      // Complete day
+      markDayCompleted(currentDay);
+      router.replace('/(tabs)');
     }
-  }, [currentExerciseIndex, currentExercise]);
+  };
 
   useEffect(() => {
     if (timerActive) {
@@ -81,17 +90,6 @@ export default function WorkoutScreen() {
       setTimeLeft(parseDuration(currentExercise?.reps || '60'));
     }
     setTimerActive(!timerActive);
-  };
-
-  const handleNext = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    if (!isLastExercise) {
-      setCurrentExerciseIndex(prev => prev + 1);
-    } else {
-      // Complete day
-      markDayCompleted(currentDay);
-      router.replace('/(tabs)');
-    }
   };
 
   if (!todaysRoutine || !currentExercise) {
