@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Modal,
-  useWindowDimensions
+  useWindowDimensions,
+  Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAppContext } from '../../store/AppContext';
@@ -18,6 +19,7 @@ import { auth } from '../../config/firebase';
 import { UserProfile } from '../../types';
 import { Activity, Flame, Scale, ActivitySquare, Award, X } from 'lucide-react-native';
 import { LineChart } from 'react-native-chart-kit';
+import LottieView from 'lottie-react-native';
 
 
 const getImcStatus = (imc: number) => {
@@ -36,7 +38,7 @@ const getImcColor = (imc: number) => {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { userProfile, setUserProfile, dailyProgress } = useAppContext();
+  const { userProfile, setUserProfile, dailyProgress, resetProgress } = useAppContext();
 
   const [newWeight, setNewWeight] = useState(userProfile?.weight?.toString() || '');
   const [isUpdatingWeight, setIsUpdatingWeight] = useState(false);
@@ -115,6 +117,27 @@ export default function ProfileScreen() {
     } catch (error) {
       console.error('Error signing out:', error);
     }
+  };
+
+  const handleResetProgress = () => {
+    Alert.alert(
+      'Reiniciar Reto',
+      '¿Estás seguro? Esto borrará tu progreso actual y volverás al Día 1.',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Sí, reiniciar',
+          style: 'destructive',
+          onPress: async () => {
+            await resetProgress();
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
 
   const tabs = ['Día', 'Semana', 'Mes', 'Total'];
@@ -245,56 +268,74 @@ export default function ProfileScreen() {
               </View>
             </View>
 
-            {/* Chart Section */}
-            <View style={styles.chartContainer}>
-              <Text style={styles.chartTitle}>Estadísticas</Text>
-              <View style={styles.chartCard}>
-                <View style={styles.chartHeader}>
-                  <View style={[styles.iconContainer, { backgroundColor: 'rgba(230, 57, 70, 0.15)' }]}>
-                    <Scale color="#E63946" size={16} />
-                  </View>
-                  <Text style={styles.chartSubtitle}>Evolución de Peso</Text>
-                </View>
-
-                {chartData?.datasets?.[0]?.data?.length > 0 ? (
-                  <LineChart
-                    data={chartData}
-                    width={Math.max(width - 80, 200)}
-                    height={220}
-                    withDots={true}
-                    withInnerLines={false}
-                    withOuterLines={false}
-                    chartConfig={{
-                      backgroundColor: '#1E1E1E',
-                      backgroundGradientFrom: '#1E1E1E',
-                      backgroundGradientTo: '#1E1E1E',
-                      decimalPlaces: 1,
-                      color: (opacity = 1) => `rgba(230, 57, 70, ${opacity})`,
-                      labelColor: (opacity = 1) => `rgba(170, 170, 170, ${opacity})`,
-                      style: {
-                        borderRadius: 16
-                      },
-                      propsForDots: {
-                        r: "4",
-                        strokeWidth: "2",
-                        stroke: "#E63946"
-                      }
-                    }}
-                    bezier
-                    style={{
-                      marginVertical: 8,
-                      borderRadius: 16,
-                      paddingRight: 30, // fix cutoff label
-                    }}
-                  />
-                ) : (
-                  <View style={{ padding: 40, alignItems: 'center' }}>
-                    <ActivityIndicator size="small" color="#E63946" />
-                    <Text style={{ color: '#aaa', marginTop: 12, fontSize: 16 }}>Cargando estadísticas...</Text>
-                  </View>
-                )}
+            {/* Challenge Completed or Chart Section */}
+            {completedDaysCount >= 45 ? (
+              <View style={styles.victoryContainer}>
+                <LottieView
+                  source={require('../../../assets/confetti.json')}
+                  autoPlay
+                  loop={false}
+                  style={styles.lottieAnimation}
+                />
+                <Text style={styles.victoryTitle}>¡Reto Completado!</Text>
+                <Text style={styles.victoryMessage}>
+                  ¡Felicidades Toro! Has conquistado los 45 días. La disciplina es tu nuevo superpoder.
+                </Text>
+                <TouchableOpacity style={styles.resetButton} onPress={handleResetProgress}>
+                  <Text style={styles.resetButtonText}>REINICIAR RETO</Text>
+                </TouchableOpacity>
               </View>
-            </View>
+            ) : (
+              <View style={styles.chartContainer}>
+                <Text style={styles.chartTitle}>Estadísticas</Text>
+                <View style={styles.chartCard}>
+                  <View style={styles.chartHeader}>
+                    <View style={[styles.iconContainer, { backgroundColor: 'rgba(230, 57, 70, 0.15)' }]}>
+                      <Scale color="#E63946" size={16} />
+                    </View>
+                    <Text style={styles.chartSubtitle}>Evolución de Peso</Text>
+                  </View>
+
+                  {chartData?.datasets?.[0]?.data?.length > 0 ? (
+                    <LineChart
+                      data={chartData}
+                      width={Math.max(width - 80, 200)}
+                      height={220}
+                      withDots={true}
+                      withInnerLines={false}
+                      withOuterLines={false}
+                      chartConfig={{
+                        backgroundColor: '#1E1E1E',
+                        backgroundGradientFrom: '#1E1E1E',
+                        backgroundGradientTo: '#1E1E1E',
+                        decimalPlaces: 1,
+                        color: (opacity = 1) => `rgba(230, 57, 70, ${opacity})`,
+                        labelColor: (opacity = 1) => `rgba(170, 170, 170, ${opacity})`,
+                        style: {
+                          borderRadius: 16
+                        },
+                        propsForDots: {
+                          r: "4",
+                          strokeWidth: "2",
+                          stroke: "#E63946"
+                        }
+                      }}
+                      bezier
+                      style={{
+                        marginVertical: 8,
+                        borderRadius: 16,
+                        paddingRight: 30, // fix cutoff label
+                      }}
+                    />
+                  ) : (
+                    <View style={{ padding: 40, alignItems: 'center' }}>
+                      <ActivityIndicator size="small" color="#E63946" />
+                      <Text style={{ color: '#aaa', marginTop: 12, fontSize: 16 }}>Cargando estadísticas...</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            )}
           </>
         ) : (
           <View style={styles.loadingContainer}>
@@ -527,6 +568,48 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '600',
     marginLeft: 10,
+  },
+  victoryContainer: {
+    backgroundColor: '#1E1E1E',
+    borderRadius: 16,
+    padding: 24,
+    alignItems: 'center',
+    marginBottom: 30,
+    borderWidth: 1,
+    borderColor: '#3a3a3a',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  lottieAnimation: {
+    width: 200,
+    height: 200,
+  },
+  victoryTitle: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  victoryMessage: {
+    color: '#aaa',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 24,
+  },
+  resetButton: {
+    backgroundColor: '#E63946',
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    width: '100%',
+    alignItems: 'center',
+  },
+  resetButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   loadingContainer: {
     padding: 40,

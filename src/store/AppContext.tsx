@@ -3,7 +3,7 @@ import { UserProfile, DailyRoutine, DailyProgress, PhotoProgress } from '../type
 import { allRoutines } from '../data/allRoutines';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '../config/firebase';
-import { doc, setDoc, getDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, getDocs, query, orderBy, deleteDoc } from 'firebase/firestore';
 
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
@@ -24,6 +24,7 @@ interface AppContextType {
   profileLoaded: boolean;
   isLoading: boolean;
   setMockAuth: (isLoggedIn: boolean) => void;
+  resetProgress: () => Promise<void>;
 }
 
 const initialProgress: DailyProgress[] = Array.from({ length: 45 }, (_, i) => ({
@@ -189,6 +190,25 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
     }
   };
 
+  const resetProgress = async () => {
+    setDailyProgress(initialProgress);
+    setCurrentDay(1);
+
+    const activeUser = firebaseUser || mockUser;
+    if (activeUser) {
+      try {
+        const userDocRef = doc(db, 'users', activeUser.uid);
+        const progressCol = collection(userDocRef, 'progress');
+        const progressSnap = await getDocs(progressCol);
+
+        const deletePromises = progressSnap.docs.map(progressDoc => deleteDoc(progressDoc.ref));
+        await Promise.all(deletePromises);
+      } catch (e) {
+        console.error("Failed to reset progress in Firestore", e);
+      }
+    }
+  };
+
   const markDayCompleted = async (day: number) => {
     setDailyProgress((prev) =>
       prev.map((progress) =>
@@ -233,6 +253,7 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
         profileLoaded,
         isLoading,
         setMockAuth,
+        resetProgress,
       }}
     >
       {children}
