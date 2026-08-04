@@ -22,6 +22,7 @@ interface AppContextType {
   firebaseUser: User | null;
   authLoading: boolean;
   profileLoaded: boolean;
+  isLoading: boolean;
   setMockAuth: (isLoggedIn: boolean) => void;
 }
 
@@ -214,6 +215,7 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
   };
 
   const activeUser = firebaseUser || mockUser;
+  const isLoading = authLoading || !profileLoaded;
 
   return (
     <AppContext.Provider
@@ -229,6 +231,7 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
         firebaseUser: activeUser,
         authLoading,
         profileLoaded,
+        isLoading,
         setMockAuth,
       }}
     >
