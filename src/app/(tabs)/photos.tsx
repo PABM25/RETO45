@@ -4,14 +4,17 @@ import * as ImagePicker from 'expo-image-picker';
 import { useAppContext } from '../../store/AppContext';
 import { PhotoProgress } from '../../types';
 import { Camera, Image as ImageIcon, X } from 'lucide-react-native';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../../config/firebase';
 
 type PhotoType = 'Frente' | 'Lado' | 'Espalda';
 
 export default function PhotosScreen() {
-  const { photos, addPhoto } = useAppContext();
+  const { photos, addPhoto, firebaseUser } = useAppContext();
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [photoType, setPhotoType] = useState<PhotoType>('Frente');
+  const [uploading, setUploading] = useState(false);
 
   // Sort photos chronologically (oldest first, to see progression)
   const sortedPhotos = [...photos].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -50,17 +53,35 @@ export default function PhotosScreen() {
     }
   };
 
-  const handleSavePhoto = () => {
-    if (selectedImage) {
-      const newPhoto: PhotoProgress = {
-        id: Math.random().toString(36).substring(7),
-        uri: selectedImage,
-        date: new Date().toISOString(),
-        type: photoType,
-      };
-      addPhoto(newPhoto);
-      setModalVisible(false);
-      setSelectedImage(null);
+  const handleSavePhoto = async () => {
+    if (selectedImage && firebaseUser) {
+      setUploading(true);
+      try {
+        const response = await fetch(selectedImage);
+        const blob = await response.blob();
+        const photoId = Math.random().toString(36).substring(7);
+        const storageRef = ref(storage, `users/${firebaseUser.uid}/photos/${photoId}`);
+
+        await uploadBytes(storageRef, blob);
+        const downloadURL = await getDownloadURL(storageRef);
+
+        const newPhoto: PhotoProgress = {
+          id: photoId,
+          uri: downloadURL,
+          date: new Date().toISOString(),
+          type: photoType,
+        };
+        await addPhoto(newPhoto);
+        setModalVisible(false);
+        setSelectedImage(null);
+      } catch (error) {
+        alert("Error al subir la foto.");
+        console.error(error);
+      } finally {
+        setUploading(false);
+      }
+    } else if (!firebaseUser) {
+        alert("Debes iniciar sesión para guardar fotos.");
     }
   };
 
@@ -142,8 +163,8 @@ export default function PhotosScreen() {
               ))}
             </View>
 
-            <TouchableOpacity style={styles.saveButton} onPress={handleSavePhoto}>
-              <Text style={styles.saveButtonText}>CONFIRMAR Y GUARDAR</Text>
+            <TouchableOpacity style={styles.saveButton} onPress={handleSavePhoto} disabled={uploading}>
+              <Text style={styles.saveButtonText}>{uploading ? 'GUARDANDO...' : 'CONFIRMAR Y GUARDAR'}</Text>
             </TouchableOpacity>
           </View>
         </View>

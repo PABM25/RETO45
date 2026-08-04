@@ -17,5 +17,21 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
+
+import { isSupported } from 'firebase/analytics';
+
 const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+// Only initialize analytics if it's supported (e.g., in a browser environment)
+let analytics;
+isSupported().then((supported) => {
+  if (supported) {
+    analytics = getAnalytics(app);
+  }
+});
+
+export const auth = getAuth(app);
+export const db = getFirestore(app);
+export const storage = getStorage(app);

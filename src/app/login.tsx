@@ -11,7 +11,7 @@ export default function LoginScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { userProfile, setMockAuth } = useAppContext();
+  const { userProfile } = useAppContext();
 
   const handleAuth = async () => {
     if (!email || !password) {
@@ -25,28 +25,16 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      let success = false;
-      try {
-        if (isLogin) {
-          await signInWithEmailAndPassword(auth, email, password);
-        } else {
-          await createUserWithEmailAndPassword(auth, email, password);
-        }
-        success = true;
-      } catch (e: any) {
-        console.log("Auth Error:", e.message);
-        // Bypass auth for ANY error in this mock environment
-        console.log("Bypassing auth for testing.");
-        setMockAuth(true);
-        success = true;
+      if (isLogin) {
+        await signInWithEmailAndPassword(auth, email, password);
+      } else {
+        await createUserWithEmailAndPassword(auth, email, password);
       }
 
-      if (success) {
-        if (!userProfile) {
-          router.replace('/onboarding');
-        } else {
-          router.replace('/(tabs)');
-        }
+      if (!userProfile) {
+        router.replace('/onboarding');
+      } else {
+        router.replace('/(tabs)');
       }
     } catch (error: any) {
       if (Platform.OS === 'web') {
