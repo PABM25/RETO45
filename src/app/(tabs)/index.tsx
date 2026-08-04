@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { CheckSquare, Square, ChevronRight, LogOut } from 'lucide-react-native';
 import { useAppContext } from '../../store/AppContext';
 import { signOut } from 'firebase/auth';
-import { auth } from '../../config/firebase';
+import { auth, db } from '../../config/firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const CHECKLIST_ITEMS = [
   "Cero Alcohol",
@@ -16,20 +17,49 @@ const CHECKLIST_ITEMS = [
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const { currentDay, markDayCompleted, dailyProgress, setMockAuth } = useAppContext();
+  const { currentDay, markDayCompleted, dailyProgress, setMockAuth, firebaseUser } = useAppContext();
 
   const currentDayData = dailyProgress.find(d => d.day === currentDay);
   const isAlreadyCompleted = currentDayData?.completed ?? false;
 
   const [checklist, setChecklist] = useState<boolean[]>(new Array(5).fill(false));
 
-  const toggleCheck = (index: number) => {
+  useEffect(() => {
+    const fetchChecklist = async () => {
+      if (firebaseUser) {
+        try {
+          const checklistDocRef = doc(db, 'users', firebaseUser.uid, 'checklist', String(currentDay));
+          const docSnap = await getDoc(checklistDocRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setChecklist(data.items || new Array(5).fill(false));
+          } else {
+            setChecklist(new Array(5).fill(false));
+          }
+        } catch (e) {
+          console.error("Failed to fetch checklist", e);
+        }
+      }
+    };
+
+    fetchChecklist();
+  }, [currentDay, firebaseUser]);
+
+  const toggleCheck = async (index: number) => {
     if (isAlreadyCompleted) return;
-    setChecklist(prev => {
-      const newChecklist = [...prev];
-      newChecklist[index] = !newChecklist[index];
-      return newChecklist;
-    });
+
+    const newChecklist = [...checklist];
+    newChecklist[index] = !newChecklist[index];
+    setChecklist(newChecklist);
+
+    if (firebaseUser) {
+      try {
+        const checklistDocRef = doc(db, 'users', firebaseUser.uid, 'checklist', String(currentDay));
+        await setDoc(checklistDocRef, { items: newChecklist });
+      } catch (e) {
+        console.error("Failed to save checklist to Firestore", e);
+      }
+    }
   };
 
   const allChecked = checklist.every(Boolean);

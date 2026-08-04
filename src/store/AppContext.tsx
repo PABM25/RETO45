@@ -3,7 +3,8 @@ import { UserProfile, DailyRoutine, DailyProgress, PhotoProgress } from '../type
 import { allRoutines } from '../data/allRoutines';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth } from '../config/firebase';
+import { auth, db } from '../config/firebase';
+import { doc, setDoc, getDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 
 interface AppContextType {
   userProfile: UserProfile | null;
@@ -48,35 +49,90 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    const loadProfile = async () => {
+    const loadData = async () => {
+      const activeUser = firebaseUser || mockUser;
+      if (!activeUser) {
+        setUserProfileState(null);
+        setDailyProgress(initialProgress);
+        setPhotos([]);
+        setCurrentDay(1);
+        setProfileLoaded(true);
+        return;
+      }
+
       try {
-        const storedProfile = await AsyncStorage.getItem('userProfile');
-        if (storedProfile) {
-          setUserProfileState(JSON.parse(storedProfile));
+        // Load User Profile
+        const userDocRef = doc(db, 'users', activeUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+        if (userDocSnap.exists()) {
+          setUserProfileState(userDocSnap.data() as UserProfile);
+        } else {
+          setUserProfileState(null);
         }
+
+        // Load Progress
+        const progressCol = collection(userDocRef, 'progress');
+        const progressSnap = await getDocs(progressCol);
+        const fetchedProgress: number[] = [];
+        progressSnap.forEach((doc) => {
+          if (doc.data().completed) {
+            fetchedProgress.push(Number(doc.id));
+          }
+        });
+
+        setDailyProgress((prev) =>
+          prev.map((p) => ({
+            ...p,
+            completed: fetchedProgress.includes(p.day),
+          }))
+        );
+
+        const maxCompletedDay = Math.max(0, ...fetchedProgress);
+        setCurrentDay(maxCompletedDay < 45 ? maxCompletedDay + 1 : 45);
+
+        // Load Photos
+        const photosCol = collection(userDocRef, 'photos');
+        const photosQuery = query(photosCol, orderBy('date', 'asc'));
+        const photosSnap = await getDocs(photosQuery);
+        const fetchedPhotos: PhotoProgress[] = [];
+        photosSnap.forEach((doc) => {
+          fetchedPhotos.push(doc.data() as PhotoProgress);
+        });
+        setPhotos(fetchedPhotos);
+
       } catch (e) {
-        console.error("Failed to load profile", e);
+        console.error("Failed to load user data from Firestore", e);
       } finally {
         setProfileLoaded(true);
       }
     };
-    loadProfile();
-  }, []);
+
+    if (!authLoading) {
+        loadData();
+    }
+  }, [firebaseUser, mockUser, authLoading]);
 
   const setUserProfile = async (profile: UserProfile | null) => {
     setUserProfileState(profile);
-    if (profile) {
-      await AsyncStorage.setItem('userProfile', JSON.stringify(profile));
-    } else {
-      await AsyncStorage.removeItem('userProfile');
+    const activeUser = firebaseUser || mockUser;
+    if (activeUser) {
+      const userDocRef = doc(db, 'users', activeUser.uid);
+      if (profile) {
+        await setDoc(userDocRef, profile, { merge: true });
+      }
     }
   };
 
-  const addPhoto = (photo: PhotoProgress) => {
+  const addPhoto = async (photo: PhotoProgress) => {
     setPhotos((prev) => [...prev, photo]);
+    const activeUser = firebaseUser || mockUser;
+    if (activeUser) {
+      const photoDocRef = doc(db, 'users', activeUser.uid, 'photos', photo.id);
+      await setDoc(photoDocRef, photo);
+    }
   };
 
-  const markDayCompleted = (day: number) => {
+  const markDayCompleted = async (day: number) => {
     setDailyProgress((prev) =>
       prev.map((progress) =>
         progress.day === day ? { ...progress, completed: true } : progress
@@ -84,6 +140,12 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
     );
     if (day === currentDay && currentDay < 45) {
       setCurrentDay(prev => prev + 1);
+    }
+
+    const activeUser = firebaseUser || mockUser;
+    if (activeUser) {
+        const progressDocRef = doc(db, 'users', activeUser.uid, 'progress', String(day));
+        await setDoc(progressDocRef, { completed: true, timestamp: new Date().toISOString() });
     }
   };
 

@@ -89,5 +89,6 @@ const styles = StyleSheet.create({
   gridTextCompleted: {
     color: '#ffffff',
     fontWeight: '900',
+    textDecorationLine: 'line-through',
   },
 });
