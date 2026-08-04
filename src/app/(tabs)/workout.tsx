@@ -132,7 +132,10 @@ export default function WorkoutScreen() {
             source={{ uri: gifUri }}
             style={styles.gifImage}
             contentFit="cover"
-            onLoadEnd={() => setGifLoading(false)}
+            cachePolicy="disk"
+            transition={300}
+            onLoad={() => setGifLoading(false)}
+            onError={() => setGifLoading(false)}
           />
         ) : (
           <View style={styles.noMediaFallback}>
