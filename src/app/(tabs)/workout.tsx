@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Linking } from 'react-native';
-import { Play, Square, Video } from 'lucide-react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Linking, Vibration, Modal, ActivityIndicator, ScrollView } from 'react-native';
+import { Play, Square, Video, Timer, Bot, X } from 'lucide-react-native';
 import { useAppContext } from '../../store/AppContext';
 import { Exercise } from '../../types';
+import { getExerciseExplanation } from '../../services/aiService';
 
 export default function WorkoutScreen() {
   const { routines, currentDay, userProfile } = useAppContext();
@@ -30,13 +31,43 @@ export default function WorkoutScreen() {
     };
   }, [timerActive]);
 
-  const toggleTimer = () => {
-    if (timerActive) {
+  const startTimer = (seconds: number) => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    setTimeLeft(seconds);
+    setTimerActive(true);
+  };
+
+  const stopTimer = () => {
+    setTimerActive(false);
+    if (timerRef.current) clearInterval(timerRef.current);
+  };
+
+  useEffect(() => {
+    if (timeLeft === 0 && timerActive) {
+      Vibration.vibrate([0, 500, 200, 500]); // Vibrate twice
       setTimerActive(false);
-      setTimeLeft(60);
       if (timerRef.current) clearInterval(timerRef.current);
-    } else {
-      setTimerActive(true);
+    }
+  }, [timeLeft, timerActive]);
+
+  const [modalVisible, setModalVisible] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiExplanation, setAiExplanation] = useState('');
+  const [selectedExerciseTitle, setSelectedExerciseTitle] = useState('');
+
+  const handleAiPress = async (exercise: Exercise) => {
+    setSelectedExerciseTitle(exercise.title);
+    setAiExplanation('');
+    setModalVisible(true);
+    setAiLoading(true);
+
+    try {
+      const explanation = await getExerciseExplanation(exercise.title, exercise.description);
+      setAiExplanation(explanation);
+    } catch (error) {
+      setAiExplanation("Error al conectar con la IA. Mantén la forma estricta y sigue adelante.");
+    } finally {
+      setAiLoading(false);
     }
   };
 
@@ -64,15 +95,25 @@ export default function WorkoutScreen() {
         </View>
       </View>
 
-      {item.videoUrl && (
+      <View style={styles.cardActions}>
+        {item.videoUrl && (
+          <TouchableOpacity
+            style={[styles.actionButton, styles.videoButton]}
+            onPress={() => Linking.openURL(item.videoUrl!)}
+          >
+            <Video size={16} color="#ffffff" />
+            <Text style={styles.actionButtonText}>VER VIDEO</Text>
+          </TouchableOpacity>
+        )}
+
         <TouchableOpacity
-          style={styles.videoButton}
-          onPress={() => Linking.openURL(item.videoUrl!)}
+          style={[styles.actionButton, styles.aiButton]}
+          onPress={() => handleAiPress(item)}
         >
-          <Video size={16} color="#ffffff" />
-          <Text style={styles.videoButtonText}>VER VIDEO</Text>
+          <Bot size={16} color="#E63946" />
+          <Text style={styles.aiButtonText}>EXPLICACIÓN IA</Text>
         </TouchableOpacity>
-      )}
+      </View>
     </View>
   );
 
@@ -98,22 +139,69 @@ export default function WorkoutScreen() {
         showsVerticalScrollIndicator={false}
       />
 
-      <TouchableOpacity
-        style={[styles.floatingTimer, timerActive && styles.floatingTimerActive]}
-        onPress={toggleTimer}
-        activeOpacity={0.8}
+      <View style={styles.timerContainer}>
+        {timerActive ? (
+          <View style={styles.activeTimerRow}>
+            <View style={styles.timerInfo}>
+              <Timer size={24} color="#E63946" />
+              <Text style={styles.activeTimerText}>Descanso: {timeLeft}s</Text>
+            </View>
+            <TouchableOpacity style={styles.stopButton} onPress={stopTimer}>
+              <Square size={20} color="#ffffff" fill="#ffffff" />
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={styles.inactiveTimerRow}>
+            <Text style={styles.timerTitle}>INICIAR DESCANSO</Text>
+            <View style={styles.timerButtons}>
+              <TouchableOpacity style={styles.timerButton} onPress={() => startTimer(60)}>
+                <Text style={styles.timerButtonText}>60s</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.timerButton} onPress={() => startTimer(90)}>
+                <Text style={styles.timerButtonText}>90s</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </View>
+
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
       >
-        <View style={styles.timerContent}>
-          {timerActive ? (
-            <Square size={20} color="#ffffff" fill="#ffffff" />
-          ) : (
-            <Play size={20} color="#ffffff" fill="#ffffff" />
-          )}
-          <Text style={styles.timerText}>
-            {timerActive ? `${timeLeft}s` : '60s'}
-          </Text>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={styles.modalTitleContainer}>
+                <Bot size={24} color="#E63946" />
+                <Text style={styles.modalTitle}>Explicación IA</Text>
+              </View>
+              <TouchableOpacity onPress={() => setModalVisible(false)}>
+                <X size={24} color="#aaaaaa" />
+              </TouchableOpacity>
+            </View>
+
+            <Text style={styles.modalExerciseTitle}>{selectedExerciseTitle}</Text>
+
+            {aiLoading ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#E63946" />
+                <Text style={styles.loadingText}>Generando estrategia...</Text>
+              </View>
+            ) : (
+              <ScrollView style={styles.aiExplanationScroll}>
+                <Text style={styles.aiExplanationText}>{aiExplanation}</Text>
+              </ScrollView>
+            )}
+
+            <TouchableOpacity style={styles.closeModalButton} onPress={() => setModalVisible(false)}>
+              <Text style={styles.closeModalButtonText}>ENTENDIDO, SEÑOR</Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </TouchableOpacity>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -193,51 +281,154 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '900',
   },
-  videoButton: {
+  cardActions: {
+    marginTop: 15,
+    gap: 10,
+  },
+  actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#E63946',
     paddingVertical: 12,
     borderRadius: 8,
-    marginTop: 15,
     gap: 8,
   },
-  videoButtonText: {
+  videoButton: {
+    backgroundColor: '#E63946',
+  },
+  actionButtonText: {
     color: '#ffffff',
     fontWeight: 'bold',
     fontSize: 14,
   },
-  floatingTimer: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
+  aiButton: {
     backgroundColor: '#1e1e1e',
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3,
-    borderColor: '#2c2c2c',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 5,
-    elevation: 8,
-  },
-  floatingTimerActive: {
+    borderWidth: 1,
     borderColor: '#E63946',
-    backgroundColor: '#E63946',
   },
-  timerContent: {
+  aiButtonText: {
+    color: '#E63946',
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  timerContainer: {
+    backgroundColor: '#1e1e1e',
+    borderTopWidth: 1,
+    borderTopColor: '#2c2c2c',
+    padding: 20,
+    paddingBottom: 30, // account for safe area
+  },
+  activeTimerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
   },
-  timerText: {
-    color: '#ffffff',
-    fontSize: 16,
+  timerInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  activeTimerText: {
+    color: '#E63946',
+    fontSize: 24,
     fontWeight: '900',
-    marginTop: 4,
+  },
+  stopButton: {
+    backgroundColor: '#E63946',
+    padding: 15,
+    borderRadius: 8,
+  },
+  inactiveTimerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  timerTitle: {
+    color: '#aaaaaa',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  timerButtons: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  timerButton: {
+    backgroundColor: '#2c2c2c',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#444',
+  },
+  timerButtonText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#121212',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '80%',
+    borderWidth: 1,
+    borderColor: '#2c2c2c',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  modalTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  modalTitle: {
+    color: '#E63946',
+    fontSize: 20,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+  },
+  modalExerciseTitle: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  loadingContainer: {
+    paddingVertical: 40,
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#aaaaaa',
+    marginTop: 15,
+    fontSize: 16,
+  },
+  aiExplanationScroll: {
+    marginBottom: 20,
+  },
+  aiExplanationText: {
+    color: '#cccccc',
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  closeModalButton: {
+    backgroundColor: '#E63946',
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  closeModalButtonText: {
+    color: '#ffffff',
+    fontWeight: '900',
+    fontSize: 16,
+    letterSpacing: 1,
   },
 });

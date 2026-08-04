@@ -38,6 +38,7 @@ export default function DashboardScreen() {
           }
         } catch (e) {
           console.error("Failed to fetch checklist", e);
+          Alert.alert('Error', 'No se pudo cargar tu progreso de Firestore. Intenta de nuevo.');
         }
       }
     };
@@ -58,6 +59,7 @@ export default function DashboardScreen() {
         await setDoc(checklistDocRef, { items: newChecklist });
       } catch (e) {
         console.error("Failed to save checklist to Firestore", e);
+        Alert.alert('Error', 'No se pudo guardar tu progreso. Verifica tu conexión a internet e intenta de nuevo.');
       }
     }
   };
