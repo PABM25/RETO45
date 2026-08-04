@@ -1,42 +1,42 @@
 import React, { useState, useMemo } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Dumbbell, Home, ChevronRight, Check, Activity, Target } from 'lucide-react-native';
 import { useAppContext } from '../store/AppContext';
 import { UserProfile } from '../types';
+import RulerSlider from '../components/RulerSlider';
+import { Picker } from '@react-native-picker/picker'; // Kept for gender/age/level simplifications if needed, or we can use custom buttons
 
 export default function OnboardingScreen() {
   const router = useRouter();
   const { setUserProfile } = useAppContext();
 
-  const [age, setAge] = useState('');
-  const [weight, setWeight] = useState('');
-  const [height, setHeight] = useState('');
+  // Step state
+  const [step, setStep] = useState(1);
+
+  // Profile fields
+  const [age, setAge] = useState<number>(25);
+  const [weight, setWeight] = useState<number>(70);
+  const [height, setHeight] = useState<number>(170);
   const [gender, setGender] = useState<'Hombre' | 'Mujer'>('Hombre');
   const [environment, setEnvironment] = useState<'CASA' | 'GYM'>('CASA');
   const [level, setLevel] = useState<'Principiante' | 'Intermedio' | 'Avanzado'>('Principiante');
   const [goal, setGoal] = useState<'Pérdida de Peso' | 'Ganancia Muscular'>('Pérdida de Peso');
 
-  const parsedAge = parseInt(age, 10);
-  const parsedWeight = parseFloat(weight);
-  const parsedHeight = parseInt(height, 10);
-
   const imc = useMemo(() => {
-    if (parsedWeight > 0 && parsedHeight > 0) {
-      const heightInMeters = parsedHeight / 100;
-      return parsedWeight / (heightInMeters * heightInMeters);
+    if (weight > 0 && height > 0) {
+      const heightInMeters = height / 100;
+      return weight / (heightInMeters * heightInMeters);
     }
     return 0;
-  }, [parsedWeight, parsedHeight]);
+  }, [weight, height]);
 
   const targetCalories = useMemo(() => {
-    if (parsedWeight > 0 && parsedHeight > 0 && parsedAge > 0) {
-      // Basic Mifflin-St Jeor Equation
-      let bmr = 10 * parsedWeight + 6.25 * parsedHeight - 5 * parsedAge;
+    if (weight > 0 && height > 0 && age > 0) {
+      let bmr = 10 * weight + 6.25 * height - 5 * age;
       bmr += gender === 'Hombre' ? 5 : -161;
 
-      // Activity multiplier
-      let multiplier = 1.2; // Sedentary
+      let multiplier = 1.2;
       if (level === 'Principiante') multiplier = 1.375;
       else if (level === 'Intermedio') multiplier = 1.55;
       else if (level === 'Avanzado') multiplier = 1.725;
@@ -44,22 +44,22 @@ export default function OnboardingScreen() {
       const maintenance = bmr * multiplier;
 
       if (goal === 'Pérdida de Peso') {
-        return maintenance * 0.8; // 20% deficit
+        return maintenance * 0.8;
       } else {
-        return maintenance * 1.2; // 20% surplus
+        return maintenance * 1.2;
       }
     }
     return 0;
-  }, [parsedWeight, parsedHeight, parsedAge, gender, level, goal]);
+  }, [weight, height, age, gender, level, goal]);
 
-  const isFormValid = parsedAge > 0 && parsedWeight > 0 && parsedHeight > 0;
-
-  const handleStart = () => {
-    if (isFormValid) {
+  const handleNext = () => {
+    if (step < 3) {
+      setStep(step + 1);
+    } else {
       const profile: UserProfile = {
-        age: parsedAge,
-        weight: parsedWeight,
-        height: parsedHeight,
+        age,
+        weight,
+        height,
         gender,
         environment,
         level,
@@ -72,127 +72,155 @@ export default function OnboardingScreen() {
     }
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.headline}>TU RENACER EN 45 DÍAS</Text>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Edad</Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="numeric"
-            value={age}
-            onChangeText={setAge}
-            placeholder="Años"
-            placeholderTextColor="#666"
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Peso (kg)</Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="decimal-pad"
-            value={weight}
-            onChangeText={setWeight}
-            placeholder="kg"
-            placeholderTextColor="#666"
-          />
-        </View>
-
-        <View style={styles.inputGroup}>
-          <Text style={styles.label}>Altura (cm)</Text>
-          <TextInput
-            style={styles.input}
-            keyboardType="numeric"
-            value={height}
-            onChangeText={setHeight}
-            placeholder="cm"
-            placeholderTextColor="#666"
-          />
-        </View>
-
-        <View style={styles.pickerContainer}>
-          <Text style={styles.label}>Género</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={gender}
-              onValueChange={(itemValue) => setGender(itemValue as 'Hombre' | 'Mujer')}
-              style={styles.picker}
-              dropdownIconColor="#E63946"
-            >
-              <Picker.Item label="Hombre" value="Hombre" color="#fff" />
-              <Picker.Item label="Mujer" value="Mujer" color="#fff" />
-            </Picker>
+  const renderProgressBar = () => (
+    <View style={styles.progressContainer}>
+      {[1, 2, 3].map((i) => (
+        <View key={i} style={styles.progressStep}>
+          <View style={[styles.progressCircle, step >= i && styles.progressCircleActive]}>
+            <Text style={[styles.progressText, step >= i && styles.progressTextActive]}>{i}</Text>
           </View>
+          {i < 3 && <View style={[styles.progressLine, step > i && styles.progressLineActive]} />}
         </View>
+      ))}
+    </View>
+  );
 
-        <View style={styles.pickerContainer}>
-          <Text style={styles.label}>Entorno</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={environment}
-              onValueChange={(itemValue) => setEnvironment(itemValue as 'CASA' | 'GYM')}
-              style={styles.picker}
-              dropdownIconColor="#E63946"
-            >
-              <Picker.Item label="CASA" value="CASA" color="#fff" />
-              <Picker.Item label="GYM" value="GYM" color="#fff" />
-            </Picker>
-          </View>
-        </View>
+  const renderStep1 = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepTitle}>TU CUERPO</Text>
 
-        <View style={styles.pickerContainer}>
-          <Text style={styles.label}>Nivel</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={level}
-              onValueChange={(itemValue) => setLevel(itemValue as 'Principiante' | 'Intermedio' | 'Avanzado')}
-              style={styles.picker}
-              dropdownIconColor="#E63946"
-            >
-              <Picker.Item label="Principiante" value="Principiante" color="#fff" />
-              <Picker.Item label="Intermedio" value="Intermedio" color="#fff" />
-              <Picker.Item label="Avanzado" value="Avanzado" color="#fff" />
-            </Picker>
-          </View>
-        </View>
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>PESO</Text>
+        <RulerSlider min={40} max={150} value={weight} onChange={setWeight} unit="kg" />
+      </View>
 
-        <View style={styles.pickerContainer}>
-          <Text style={styles.label}>Objetivo</Text>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={goal}
-              onValueChange={(itemValue) => setGoal(itemValue as 'Pérdida de Peso' | 'Ganancia Muscular')}
-              style={styles.picker}
-              dropdownIconColor="#E63946"
-            >
-              <Picker.Item label="Pérdida de Peso" value="Pérdida de Peso" color="#fff" />
-              <Picker.Item label="Ganancia Muscular" value="Ganancia Muscular" color="#fff" />
-            </Picker>
-          </View>
-        </View>
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>ALTURA</Text>
+        <RulerSlider min={140} max={220} value={height} onChange={setHeight} unit="cm" />
+      </View>
+    </View>
+  );
 
-        <View style={styles.card}>
-          <View style={styles.cardRow}>
-            <Text style={styles.cardLabel}>IMC:</Text>
-            <Text style={styles.cardValue}>{imc > 0 ? imc.toFixed(1) : '--'}</Text>
-          </View>
-          <View style={styles.cardRow}>
-            <Text style={styles.cardLabel}>Calorías Diarias Meta:</Text>
-            <Text style={styles.cardValue}>{targetCalories > 0 ? Math.round(targetCalories) : '--'} kcal</Text>
-          </View>
+  const renderStep2 = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepTitle}>DETALLES</Text>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>EDAD</Text>
+        <RulerSlider min={15} max={80} value={age} onChange={setAge} unit="Años" />
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>GÉNERO</Text>
+        <View style={styles.rowCards}>
+          <TouchableOpacity
+            style={[styles.smallCard, gender === 'Hombre' && styles.smallCardSelected]}
+            onPress={() => setGender('Hombre')}
+          >
+            <Text style={[styles.smallCardText, gender === 'Hombre' && styles.smallCardTextSelected]}>HOMBRE</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.smallCard, gender === 'Mujer' && styles.smallCardSelected]}
+            onPress={() => setGender('Mujer')}
+          >
+            <Text style={[styles.smallCardText, gender === 'Mujer' && styles.smallCardTextSelected]}>MUJER</Text>
+          </TouchableOpacity>
         </View>
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>NIVEL ACTUAL</Text>
+        <View style={styles.pickerWrapper}>
+          <Picker
+            selectedValue={level}
+            onValueChange={(itemValue) => setLevel(itemValue as 'Principiante' | 'Intermedio' | 'Avanzado')}
+            style={styles.picker}
+            dropdownIconColor="#E63946"
+          >
+            <Picker.Item label="Principiante" value="Principiante" color="#fff" />
+            <Picker.Item label="Intermedio" value="Intermedio" color="#fff" />
+            <Picker.Item label="Avanzado" value="Avanzado" color="#fff" />
+          </Picker>
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderStep3 = () => (
+    <View style={styles.stepContainer}>
+      <Text style={styles.stepTitle}>TUS METAS</Text>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>¿DÓNDE ENTRENARÁS?</Text>
 
         <TouchableOpacity
-          style={[styles.button, !isFormValid && styles.buttonDisabled]}
-          onPress={handleStart}
-          disabled={!isFormValid}
+          style={[styles.optionCard, environment === 'CASA' && styles.optionCardSelected]}
+          onPress={() => setEnvironment('CASA')}
         >
-          <Text style={styles.buttonText}>INICIAR EL RETO</Text>
+          <Home size={32} color={environment === 'CASA' ? '#E63946' : '#aaaaaa'} />
+          <View style={styles.optionCardContent}>
+            <Text style={[styles.optionCardTitle, environment === 'CASA' && styles.optionCardTitleSelected]}>CASA</Text>
+            <Text style={styles.optionCardDesc}>Sin equipo especial. Usa tu cuerpo.</Text>
+          </View>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.optionCard, environment === 'GYM' && styles.optionCardSelected]}
+          onPress={() => setEnvironment('GYM')}
+        >
+          <Dumbbell size={32} color={environment === 'GYM' ? '#E63946' : '#aaaaaa'} />
+          <View style={styles.optionCardContent}>
+            <Text style={[styles.optionCardTitle, environment === 'GYM' && styles.optionCardTitleSelected]}>GYM</Text>
+            <Text style={styles.optionCardDesc}>Acceso a pesas y máquinas.</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>OBJETIVO PRINCIPAL</Text>
+
+        <TouchableOpacity
+          style={[styles.optionCard, goal === 'Pérdida de Peso' && styles.optionCardSelected]}
+          onPress={() => setGoal('Pérdida de Peso')}
+        >
+          <Activity size={32} color={goal === 'Pérdida de Peso' ? '#E63946' : '#aaaaaa'} />
+          <View style={styles.optionCardContent}>
+            <Text style={[styles.optionCardTitle, goal === 'Pérdida de Peso' && styles.optionCardTitleSelected]}>PÉRDIDA DE PESO</Text>
+          </View>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.optionCard, goal === 'Ganancia Muscular' && styles.optionCardSelected]}
+          onPress={() => setGoal('Ganancia Muscular')}
+        >
+          <Target size={32} color={goal === 'Ganancia Muscular' ? '#E63946' : '#aaaaaa'} />
+          <View style={styles.optionCardContent}>
+            <Text style={[styles.optionCardTitle, goal === 'Ganancia Muscular' && styles.optionCardTitleSelected]}>GANANCIA MUSCULAR</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headline}>RETO 45</Text>
+        {renderProgressBar()}
+      </View>
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {step === 1 && renderStep1()}
+        {step === 2 && renderStep2()}
+        {step === 3 && renderStep3()}
       </ScrollView>
+
+      <View style={styles.footer}>
+        <TouchableOpacity style={styles.button} onPress={handleNext}>
+          <Text style={styles.buttonText}>{step < 3 ? 'SIGUIENTE' : 'FINALIZAR'}</Text>
+          {step < 3 ? <ChevronRight size={24} color="#fff" /> : <Check size={24} color="#fff" />}
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
@@ -202,41 +230,109 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#121212',
   },
+  header: {
+    padding: 20,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#2c2c2c',
+  },
+  headline: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#E63946',
+    letterSpacing: 2,
+    marginBottom: 20,
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '80%',
+  },
+  progressStep: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  progressCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#1e1e1e',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#444',
+  },
+  progressCircleActive: {
+    borderColor: '#E63946',
+    backgroundColor: '#E63946',
+  },
+  progressText: {
+    color: '#aaaaaa',
+    fontWeight: 'bold',
+  },
+  progressTextActive: {
+    color: '#ffffff',
+  },
+  progressLine: {
+    width: 50,
+    height: 2,
+    backgroundColor: '#444',
+    marginHorizontal: 5,
+  },
+  progressLineActive: {
+    backgroundColor: '#E63946',
+  },
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
   },
-  headline: {
-    fontSize: 28,
+  stepContainer: {
+    flex: 1,
+  },
+  stepTitle: {
+    fontSize: 22,
     fontWeight: '900',
     color: '#ffffff',
+    marginBottom: 30,
     textAlign: 'center',
-    marginVertical: 20,
-    textTransform: 'uppercase',
-    letterSpacing: 2,
+    letterSpacing: 1,
   },
   inputGroup: {
-    marginBottom: 15,
+    marginBottom: 30,
   },
   label: {
-    color: '#ffffff',
-    fontSize: 16,
+    color: '#aaaaaa',
+    fontSize: 14,
     fontWeight: 'bold',
-    marginBottom: 5,
+    marginBottom: 10,
     textTransform: 'uppercase',
+    letterSpacing: 1,
   },
-  input: {
+  rowCards: {
+    flexDirection: 'row',
+    gap: 15,
+  },
+  smallCard: {
+    flex: 1,
     backgroundColor: '#1e1e1e',
-    color: '#ffffff',
-    borderWidth: 2,
-    borderColor: '#2c2c2c',
     padding: 15,
     borderRadius: 8,
-    fontSize: 16,
-    fontWeight: 'bold',
+    borderWidth: 2,
+    borderColor: '#2c2c2c',
+    alignItems: 'center',
   },
-  pickerContainer: {
-    marginBottom: 15,
+  smallCardSelected: {
+    borderColor: '#E63946',
+    backgroundColor: 'rgba(230, 57, 70, 0.1)',
+  },
+  smallCardText: {
+    color: '#aaaaaa',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  smallCardTextSelected: {
+    color: '#E63946',
   },
   pickerWrapper: {
     backgroundColor: '#1e1e1e',
@@ -249,43 +345,57 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     backgroundColor: '#1e1e1e',
   },
-  card: {
+  optionCard: {
+    flexDirection: 'row',
     backgroundColor: '#1e1e1e',
     padding: 20,
-    borderRadius: 8,
-    borderWidth: 1,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#2c2c2c',
+    alignItems: 'center',
+    marginBottom: 15,
+    gap: 15,
+  },
+  optionCardSelected: {
     borderColor: '#E63946',
-    marginVertical: 20,
+    backgroundColor: 'rgba(230, 57, 70, 0.1)',
   },
-  cardRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
+  optionCardContent: {
+    flex: 1,
   },
-  cardLabel: {
-    color: '#aaaaaa',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  cardValue: {
+  optionCardTitle: {
     color: '#ffffff',
     fontSize: 18,
     fontWeight: '900',
+    marginBottom: 5,
+  },
+  optionCardTitleSelected: {
+    color: '#E63946',
+  },
+  optionCardDesc: {
+    color: '#aaaaaa',
+    fontSize: 14,
+  },
+  footer: {
+    padding: 20,
+    paddingBottom: 30,
+    backgroundColor: '#121212',
+    borderTopWidth: 1,
+    borderTopColor: '#2c2c2c',
   },
   button: {
     backgroundColor: '#E63946',
-    padding: 20,
-    borderRadius: 8,
+    padding: 18,
+    borderRadius: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 10,
-  },
-  buttonDisabled: {
-    backgroundColor: '#555555',
+    justifyContent: 'center',
+    gap: 10,
   },
   buttonText: {
     color: '#ffffff',
     fontSize: 18,
     fontWeight: '900',
-    letterSpacing: 1,
+    letterSpacing: 2,
   },
 });

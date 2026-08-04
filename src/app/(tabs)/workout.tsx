@@ -1,19 +1,57 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, SafeAreaView, Linking, Vibration, Modal, ActivityIndicator, ScrollView } from 'react-native';
-import { Play, Square, Video, Timer, Bot, X, Eye } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Vibration, ActivityIndicator } from 'react-native';
+import { ArrowLeft, Timer, StopCircle, Play, ChevronRight, Check } from 'lucide-react-native';
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import { useAppContext } from '../../store/AppContext';
-import { Exercise } from '../../types';
-import { getExerciseExplanation } from '../../services/aiService';
 import { getExerciseGifName, translateMuscle } from '../../utils/exerciseDictionary';
 import exercisesData from '../../data/exercises.json';
+import { Exercise } from '../../types';
 
 export default function WorkoutScreen() {
-  const { routines, currentDay, userProfile } = useAppContext();
+  const router = useRouter();
+  const { routines, currentDay, userProfile, markDayCompleted } = useAppContext();
 
+  const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [timerActive, setTimerActive] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(60);
+  const [timeLeft, setTimeLeft] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [gifLoading, setGifLoading] = useState(true);
+
+  // Clear timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  const todaysRoutine = routines.find(
+    r => r.dayNumber === currentDay && r.environment === (userProfile?.environment || 'CASA')
+  );
+
+  const exercises = todaysRoutine?.exercises || [];
+  const currentExercise = exercises[currentExerciseIndex] as Exercise | undefined;
+  const nextExercise = exercises[currentExerciseIndex + 1] as Exercise | undefined;
+  const isLastExercise = currentExerciseIndex === exercises.length - 1;
+
+  // Derive duration in seconds from 'reps' field or default to 60 if it's not time-based
+  const parseDuration = (repsString: string) => {
+    if (repsString.toLowerCase().includes('seg') || repsString.toLowerCase().includes('sec')) {
+      const match = repsString.match(/\d+/);
+      if (match) return parseInt(match[0], 10);
+    }
+    return 60; // default active time if reps-based
+  };
+
+  useEffect(() => {
+    if (currentExercise) {
+      setTimerActive(false);
+      setTimeLeft(parseDuration(currentExercise.reps));
+      setGifLoading(true);
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+  }, [currentExerciseIndex, currentExercise]);
 
   useEffect(() => {
     if (timerActive) {
@@ -22,11 +60,14 @@ export default function WorkoutScreen() {
           if (prev <= 1) {
             setTimerActive(false);
             if (timerRef.current) clearInterval(timerRef.current);
-            return 60;
+            Vibration.vibrate([0, 500, 200, 500]); // Vibrate twice
+            return 0;
           }
           return prev - 1;
         });
       }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
     }
 
     return () => {
@@ -34,264 +75,132 @@ export default function WorkoutScreen() {
     };
   }, [timerActive]);
 
-  const startTimer = (seconds: number) => {
-    if (timerRef.current) clearInterval(timerRef.current);
-    setTimeLeft(seconds);
-    setTimerActive(true);
-  };
-
-  const stopTimer = () => {
-    setTimerActive(false);
-    if (timerRef.current) clearInterval(timerRef.current);
-  };
-
-  useEffect(() => {
-    if (timeLeft === 0 && timerActive) {
-      Vibration.vibrate([0, 500, 200, 500]); // Vibrate twice
-      setTimerActive(false);
-      if (timerRef.current) clearInterval(timerRef.current);
+  const toggleTimer = () => {
+    if (timeLeft === 0) {
+      // If timer is at 0, reset to start
+      setTimeLeft(parseDuration(currentExercise?.reps || '60'));
     }
-  }, [timeLeft, timerActive]);
+    setTimerActive(!timerActive);
+  };
 
-  const [modalVisible, setModalVisible] = useState(false);
-  const [aiLoading, setAiLoading] = useState(false);
-  const [aiExplanation, setAiExplanation] = useState('');
-  const [selectedExerciseTitle, setSelectedExerciseTitle] = useState('');
-
-  const [exampleModalVisible, setExampleModalVisible] = useState(false);
-  const [selectedExample, setSelectedExample] = useState<any>(null);
-  const [gifLoading, setGifLoading] = useState(true);
-
-  const handleExamplePress = (exercise: Exercise) => {
-    setSelectedExerciseTitle(exercise.title);
-
-    const englishName = getExerciseGifName(exercise.title);
-    const found = exercisesData.find((e: any) => e.name.toLowerCase().includes(englishName.toLowerCase()));
-
-    if (found) {
-      setSelectedExample(found);
+  const handleNext = () => {
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (!isLastExercise) {
+      setCurrentExerciseIndex(prev => prev + 1);
     } else {
-      setSelectedExample(null);
-    }
-    setGifLoading(true);
-    setExampleModalVisible(true);
-  };
-
-  const handleAiPress = async (exercise: Exercise) => {
-    setSelectedExerciseTitle(exercise.title);
-    setAiExplanation('');
-    setModalVisible(true);
-    setAiLoading(true);
-
-    try {
-      const explanation = await getExerciseExplanation(exercise.title, exercise.description);
-      setAiExplanation(explanation);
-    } catch (error) {
-      setAiExplanation("Error al conectar con la IA. Mantén la forma estricta y sigue adelante.");
-    } finally {
-      setAiLoading(false);
+      // Complete day
+      markDayCompleted(currentDay);
+      router.replace('/(tabs)');
     }
   };
 
-  const todaysRoutine = routines.find(
-    r => r.dayNumber === currentDay && r.environment === (userProfile?.environment || 'CASA')
-  );
-
-  let recommendedSets = 3;
-  if (userProfile?.level === 'Intermedio') recommendedSets = 4;
-  else if (userProfile?.level === 'Avanzado') recommendedSets = 5;
-
-  const renderExerciseCard = ({ item }: { item: Exercise }) => (
-    <View style={styles.card}>
-      <Text style={styles.cardTitle}>{item.title}</Text>
-      <Text style={styles.cardDescription}>{item.description}</Text>
-
-      <View style={styles.cardDetails}>
-        <View style={styles.detailBox}>
-          <Text style={styles.detailLabel}>Series (Recomendadas)</Text>
-          <Text style={styles.detailValue}>{recommendedSets}</Text>
-        </View>
-        <View style={styles.detailBox}>
-          <Text style={styles.detailLabel}>Reps</Text>
-          <Text style={styles.detailValue}>{item.reps}</Text>
-        </View>
-      </View>
-
-      <View style={styles.cardActions}>
-        <View style={styles.rowActions}>
-          {item.videoUrl && (
-            <TouchableOpacity
-              style={[styles.actionButton, styles.videoButton, { flex: 1, marginRight: 5 }]}
-              onPress={() => Linking.openURL(item.videoUrl!)}
-            >
-              <Video size={16} color="#ffffff" />
-              <Text style={styles.actionButtonText}>VIDEO</Text>
-            </TouchableOpacity>
-          )}
-
-          <TouchableOpacity
-            style={[styles.actionButton, styles.exampleButton, { flex: 1, marginLeft: item.videoUrl ? 5 : 0 }]}
-            onPress={() => handleExamplePress(item)}
-          >
-            <Eye size={16} color="#ffffff" />
-            <Text style={styles.actionButtonText}>EJEMPLO</Text>
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity
-          style={[styles.actionButton, styles.aiButton]}
-          onPress={() => handleAiPress(item)}
-        >
-          <Bot size={16} color="#E63946" />
-          <Text style={styles.aiButtonText}>EXPLICACIÓN IA</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
-  if (!todaysRoutine) {
+  if (!todaysRoutine || !currentExercise) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Rutina no encontrada.</Text>
+          <Text style={styles.emptyText}>Rutina no encontrada o día completado.</Text>
         </View>
       </SafeAreaView>
     );
   }
 
+  // Get matching GIF from dataset
+  const englishName = getExerciseGifName(currentExercise.title);
+  const foundDatasetExercise = exercisesData.find((e: any) => e.name.toLowerCase().includes(englishName.toLowerCase())) as any;
+  const gifUri = foundDatasetExercise ? `https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/master/${foundDatasetExercise.gif_url || foundDatasetExercise.gifUrl}` : null;
+
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.headerTitle}>{todaysRoutine.title}</Text>
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <ArrowLeft size={24} color="#ffffff" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>RETO DIARIO</Text>
+        <View style={{ width: 44 }} /> {/* Balance */}
+      </View>
 
-      <FlatList
-        data={todaysRoutine.exercises}
-        keyExtractor={(item) => item.id}
-        renderItem={renderExerciseCard}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
-
-      <View style={styles.timerContainer}>
-        {timerActive ? (
-          <View style={styles.activeTimerRow}>
-            <View style={styles.timerInfo}>
-              <Timer size={24} color="#E63946" />
-              <Text style={styles.activeTimerText}>Descanso: {timeLeft}s</Text>
-            </View>
-            <TouchableOpacity style={styles.stopButton} onPress={stopTimer}>
-              <Square size={20} color="#ffffff" fill="#ffffff" />
-            </TouchableOpacity>
+      {/* Media Container */}
+      <View style={styles.mediaContainer}>
+        {gifLoading && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#E63946" />
           </View>
+        )}
+        {gifUri ? (
+          <Image
+            source={{ uri: gifUri }}
+            style={styles.gifImage}
+            contentFit="cover"
+            onLoadEnd={() => setGifLoading(false)}
+          />
         ) : (
-          <View style={styles.inactiveTimerRow}>
-            <Text style={styles.timerTitle}>INICIAR DESCANSO</Text>
-            <View style={styles.timerButtons}>
-              <TouchableOpacity style={styles.timerButton} onPress={() => startTimer(60)}>
-                <Text style={styles.timerButtonText}>60s</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.timerButton} onPress={() => startTimer(90)}>
-                <Text style={styles.timerButtonText}>90s</Text>
-              </TouchableOpacity>
-            </View>
+          <View style={styles.noMediaFallback}>
+            <Text style={styles.noMediaText}>GIF no disponible</Text>
           </View>
         )}
       </View>
 
-      {/* Example Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={exampleModalVisible}
-        onRequestClose={() => setExampleModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <View style={styles.modalTitleContainer}>
-                <Eye size={24} color="#E63946" />
-                <Text style={styles.modalTitle}>Ejemplo Visual</Text>
-              </View>
-              <TouchableOpacity onPress={() => setExampleModalVisible(false)}>
-                <X size={24} color="#aaaaaa" />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.modalExerciseTitle}>{selectedExerciseTitle}</Text>
-
-            {selectedExample ? (
-              <View style={styles.exampleContainer}>
-                {selectedExample.target && (
-                  <Text style={styles.targetMuscleText}>
-                    Músculo objetivo: <Text style={styles.targetMuscleHighlight}>{translateMuscle(selectedExample.target)}</Text>
-                  </Text>
-                )}
-
-                <View style={styles.imageWrapper}>
-                  {/* Activity Indicator controlled by image loading state */}
-                  {gifLoading && (
-                    <View style={styles.loadingOverlay}>
-                      <ActivityIndicator size="large" color="#E63946" />
-                    </View>
-                  )}
-                  <Image
-                    source={{ uri: `https://raw.githubusercontent.com/hasaneyldrm/exercises-dataset/master/${selectedExample.gifUrl || selectedExample.gif_url}` }}
-                    style={styles.gifImage}
-                    contentFit="contain"
-                    onLoadEnd={() => setGifLoading(false)}
-                  />
-                </View>
-              </View>
+      {/* Active Timer & Info Block */}
+      <View style={styles.infoBlock}>
+        <TouchableOpacity
+          style={styles.timerPane}
+          onPress={toggleTimer}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.timerTime}>
+            {Math.floor(timeLeft / 60).toString().padStart(2, '0')}:
+            {(timeLeft % 60).toString().padStart(2, '0')}
+          </Text>
+          <View style={styles.timerActionRow}>
+            {timerActive ? (
+              <StopCircle size={20} color="#ffffff" />
             ) : (
-              <View style={styles.noDataContainer}>
-                <Text style={styles.noDataText}>Animación no disponible por el momento.</Text>
-              </View>
+              <Play size={20} color="#ffffff" fill="#ffffff" />
             )}
-
-            <TouchableOpacity style={styles.closeModalButton} onPress={() => setExampleModalVisible(false)}>
-              <Text style={styles.closeModalButtonText}>CERRAR</Text>
-            </TouchableOpacity>
+            <Text style={styles.timerActionText}>
+              {timerActive ? 'PAUSAR' : timeLeft === 0 ? 'REINICIAR' : 'INICIAR'}
+            </Text>
           </View>
-        </View>
-      </Modal>
+        </TouchableOpacity>
 
-      {/* AI Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
+        <View style={styles.detailsPane}>
+          <View style={styles.stepBadge}>
+            <Text style={styles.stepText}>{currentExerciseIndex + 1}/{exercises.length}</Text>
+          </View>
+          <Text style={styles.exerciseTitle} numberOfLines={2} adjustsFontSizeToFit>
+            {currentExercise.title}
+          </Text>
+          <Text style={styles.exerciseReps}>{currentExercise.reps}</Text>
+        </View>
+      </View>
+
+      {/* Next Up Section */}
+      <View style={{ flex: 1 }} />
+      <TouchableOpacity
+        style={styles.nextUpContainer}
+        onPress={handleNext}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <View style={styles.modalTitleContainer}>
-                <Bot size={24} color="#E63946" />
-                <Text style={styles.modalTitle}>Explicación IA</Text>
+        <View style={styles.nextUpContent}>
+          {!isLastExercise ? (
+            <>
+              <Text style={styles.nextUpLabel}>SIGUIENTE</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text style={styles.nextUpTitle}>{nextExercise?.title}</Text>
+                <Text style={styles.nextUpDuration}>{nextExercise?.reps}</Text>
               </View>
-              <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <X size={24} color="#aaaaaa" />
-              </TouchableOpacity>
-            </View>
-
-            <Text style={styles.modalExerciseTitle}>{selectedExerciseTitle}</Text>
-
-            {aiLoading ? (
-              <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color="#E63946" />
-                <Text style={styles.loadingText}>Generando estrategia...</Text>
-              </View>
-            ) : (
-              <ScrollView style={styles.aiExplanationScroll}>
-                <Text style={styles.aiExplanationText}>{aiExplanation}</Text>
-              </ScrollView>
-            )}
-
-            <TouchableOpacity style={styles.closeModalButton} onPress={() => setModalVisible(false)}>
-              <Text style={styles.closeModalButtonText}>ENTENDIDO, SEÑOR</Text>
-            </TouchableOpacity>
-          </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.nextUpLabel}>¡CASI LISTO!</Text>
+              <Text style={styles.nextUpTitle}>FINALIZAR ENTRENAMIENTO</Text>
+            </>
+          )}
         </View>
-      </Modal>
+        <View style={styles.nextIconContainer}>
+          {!isLastExercise ? <ChevronRight size={28} color="#ffffff" /> : <Check size={28} color="#E63946" />}
+        </View>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -300,16 +209,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#121212',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '900',
-    color: '#ffffff',
-    textAlign: 'center',
-    marginVertical: 20,
-    paddingHorizontal: 15,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
   },
   emptyContainer: {
     flex: 1,
@@ -320,125 +219,41 @@ const styles = StyleSheet.create({
     color: '#aaaaaa',
     fontSize: 18,
   },
-  listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 100, // Make room for floating timer
-  },
-  card: {
-    backgroundColor: '#1e1e1e',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#2c2c2c',
-    padding: 20,
-    marginBottom: 15,
-  },
-  cardTitle: {
-    color: '#E63946',
-    fontSize: 20,
-    fontWeight: '900',
-    marginBottom: 10,
-    textTransform: 'uppercase',
-  },
-  cardDescription: {
-    color: '#aaaaaa',
-    fontSize: 14,
-    marginBottom: 15,
-    lineHeight: 20,
-  },
-  cardDetails: {
+  header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  detailBox: {
-    flex: 1,
-    backgroundColor: '#121212',
-    padding: 10,
-    borderRadius: 8,
-    marginHorizontal: 5,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#2c2c2c',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
-  detailLabel: {
-    color: '#aaaaaa',
-    fontSize: 12,
-    fontWeight: 'bold',
-    textTransform: 'uppercase',
-    marginBottom: 5,
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#E63946',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  detailValue: {
+  headerTitle: {
     color: '#ffffff',
     fontSize: 18,
     fontWeight: '900',
+    letterSpacing: 1,
   },
-  cardActions: {
-    marginTop: 15,
-    gap: 10,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 8,
-    gap: 8,
-  },
-  rowActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-  },
-  videoButton: {
-    backgroundColor: '#E63946',
-  },
-  exampleButton: {
-    backgroundColor: '#333333',
-  },
-  actionButtonText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  aiButton: {
-    backgroundColor: '#1e1e1e',
-    borderWidth: 1,
-    borderColor: '#E63946',
-  },
-  aiButtonText: {
-    color: '#E63946',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
-  exampleContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  targetMuscleText: {
-    color: '#aaaaaa',
-    fontSize: 16,
-    marginBottom: 15,
-  },
-  targetMuscleHighlight: {
-    color: '#E63946',
-    fontWeight: 'bold',
-  },
-  imageWrapper: {
-    width: '100%',
-    height: 250,
+  mediaContainer: {
+    marginHorizontal: 20,
+    height: 350,
     backgroundColor: '#1a1a1a',
-    borderRadius: 8,
+    borderRadius: 24,
     overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
     position: 'relative',
+    borderWidth: 1,
+    borderColor: '#2c2c2c',
+    marginBottom: 20,
   },
   gifImage: {
     width: '100%',
     height: '100%',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    zIndex: 1,
   },
   loadingOverlay: {
     position: 'absolute',
@@ -448,135 +263,125 @@ const styles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
     alignItems: 'center',
-    zIndex: 0, // Image will sit on top once loaded
+    backgroundColor: '#1a1a1a',
+    zIndex: 1,
   },
-  noDataContainer: {
-    paddingVertical: 40,
+  noMediaFallback: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  noDataText: {
-    color: '#aaaaaa',
+  noMediaText: {
+    color: '#666666',
     fontSize: 16,
-    textAlign: 'center',
+    fontWeight: 'bold',
   },
-  timerContainer: {
-    backgroundColor: '#1e1e1e',
-    borderTopWidth: 1,
-    borderTopColor: '#2c2c2c',
-    padding: 20,
-    paddingBottom: 30, // account for safe area
-  },
-  activeTimerRow: {
+  infoBlock: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    marginHorizontal: 20,
+    gap: 15,
   },
-  timerInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  activeTimerText: {
-    color: '#E63946',
-    fontSize: 24,
-    fontWeight: '900',
-  },
-  stopButton: {
+  timerPane: {
+    flex: 1.2,
     backgroundColor: '#E63946',
-    padding: 15,
-    borderRadius: 8,
-  },
-  inactiveTimerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    borderRadius: 20,
+    padding: 20,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  timerTitle: {
+  timerTime: {
+    color: '#ffffff',
+    fontSize: 42,
+    fontWeight: '900',
+    fontVariant: ['tabular-nums'],
+    marginBottom: 5,
+  },
+  timerActionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  timerActionText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  detailsPane: {
+    flex: 1.5,
+    backgroundColor: '#1e1e1e',
+    borderRadius: 20,
+    padding: 20,
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#2c2c2c',
+  },
+  stepBadge: {
+    backgroundColor: '#2c2c2c',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+    marginBottom: 10,
+  },
+  stepText: {
+    color: '#aaaaaa',
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  exerciseTitle: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '900',
+    marginBottom: 8,
+    textTransform: 'uppercase',
+  },
+  exerciseReps: {
     color: '#aaaaaa',
     fontSize: 14,
     fontWeight: 'bold',
   },
-  timerButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  timerButton: {
-    backgroundColor: '#2c2c2c',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#444',
-  },
-  timerButtonText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
-    backgroundColor: '#121212',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+  nextUpContainer: {
+    marginHorizontal: 20,
+    marginBottom: 30,
+    backgroundColor: '#1a1a1a',
+    borderRadius: 20,
     padding: 20,
-    maxHeight: '80%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: '#2c2c2c',
   },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
+  nextUpContent: {
+    flex: 1,
   },
-  modalTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  modalTitle: {
-    color: '#E63946',
-    fontSize: 20,
+  nextUpLabel: {
+    color: '#aaaaaa',
+    fontSize: 12,
     fontWeight: '900',
+    letterSpacing: 1,
+    marginBottom: 5,
+  },
+  nextUpTitle: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: 'bold',
     textTransform: 'uppercase',
   },
-  modalExerciseTitle: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  loadingContainer: {
-    paddingVertical: 40,
-    alignItems: 'center',
-  },
-  loadingText: {
+  nextUpDuration: {
     color: '#aaaaaa',
-    marginTop: 15,
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginRight: 10,
   },
-  aiExplanationScroll: {
-    marginBottom: 20,
-  },
-  aiExplanationText: {
-    color: '#cccccc',
-    fontSize: 16,
-    lineHeight: 24,
-  },
-  closeModalButton: {
-    backgroundColor: '#E63946',
-    padding: 15,
-    borderRadius: 8,
+  nextIconContainer: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#2c2c2c',
+    justifyContent: 'center',
     alignItems: 'center',
-  },
-  closeModalButtonText: {
-    color: '#ffffff',
-    fontWeight: '900',
-    fontSize: 16,
-    letterSpacing: 1,
   },
 });
