@@ -5,6 +5,11 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '../config/firebase';
 import { doc, setDoc, getDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import { Platform } from 'react-native';
+
+
 interface AppContextType {
   userProfile: UserProfile | null;
   setUserProfile: (profile: UserProfile | null) => void;
@@ -25,6 +30,17 @@ const initialProgress: DailyProgress[] = Array.from({ length: 45 }, (_, i) => ({
   completed: false,
 }));
 
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -38,6 +54,47 @@ export const AppContextProvider: React.FC<{ children: ReactNode }> = ({ children
   const [mockUser, setMockUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [profileLoaded, setProfileLoaded] = useState(false);
+
+  useEffect(() => {
+    async function requestNotificationPermissions() {
+      if (Platform.OS === 'web') return; // expo-notifications relies on native modules
+
+      if (Device.isDevice) {
+        const { status: existingStatus } = await Notifications.getPermissionsAsync();
+        let finalStatus = existingStatus;
+        if (existingStatus !== 'granted') {
+          const { status } = await Notifications.requestPermissionsAsync();
+          finalStatus = status;
+        }
+        if (finalStatus !== 'granted') {
+          console.log('Failed to get push token for push notification!');
+          return;
+        }
+        await scheduleDailyReminder();
+      } else {
+        console.log('Must use physical device for Push Notifications');
+      }
+    }
+
+    async function scheduleDailyReminder() {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "¡Toro! No rompas la racha 💪",
+          body: "Entra a registrar tu progreso de hoy. La disciplina vence a la motivación.",
+        },
+        trigger: {
+          hour: 20,
+          minute: 0,
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+        },
+      });
+    }
+
+    requestNotificationPermissions();
+  }, []);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
