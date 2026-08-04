@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Vibration, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Vibration, ActivityIndicator } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, StopCircle, Play, ChevronRight, Check } from 'lucide-react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -115,7 +116,8 @@ export default function WorkoutScreen() {
           <ArrowLeft size={24} color="#ffffff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>RETO DIARIO</Text>
-        <View style={{ width: 44 }} /> {/* Balance */}
+        <View style={{ width: 44 }} />
+        {/* Balance */}
       </View>
 
       {/* Media Container */}
